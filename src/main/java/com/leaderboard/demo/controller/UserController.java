@@ -2,6 +2,7 @@ package com.leaderboard.demo.controller;
 
 import com.leaderboard.demo.entity.User;
 import com.leaderboard.demo.service.UserService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,9 +13,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/api/users")
 public class UserController {
-
+    
     @Autowired
     private UserService userService;
 
@@ -46,5 +47,6 @@ public class UserController {
         User deletedUser = userService.deleteUser(id);
         return deletedUser != null ? new ResponseEntity<>(deletedUser, HttpStatus.OK)
                 : new ResponseEntity<>(HttpStatus.NOT_FOUND);
+
     }
 }

@@ -1,34 +1,39 @@
-HELP.md
+# Ignore compiled Java and build artifacts
 target/
-!.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+build/
 
-### STS ###
-.apt_generated
+# Ignore Maven wrapper files (except the jar)
+!.mvn/wrapper/maven-wrapper.jar
+
+# Ignore IntelliJ and VS Code project settings
+.idea/
+.vscode/
+
+# Ignore IDE-specific files
+*.iml
+*.ipr
+*.iws
 .classpath
 .factorypath
 .project
-.settings
-.springBeans
-.sts4-cache
+.settings/
+.springBeans/
+.sts4-cache/
 
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
-### NetBeans ###
+# Ignore NetBeans project files
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
-build/
+
+# Ignore application.properties (contains credentials)
+src/main/resources/application.properties
+
+# Ignore STS (Spring Tool Suite) generated files
+.apt_generated
+
+# Keep Maven and Gradle build directories ignored
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### VS Code ###
-.vscode/
-src/main/resources/application.properties

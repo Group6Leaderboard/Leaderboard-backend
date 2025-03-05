@@ -1,5 +1,6 @@
 package com.leaderboard.demo.entity;
 
+
 import jakarta.persistence.*;
 import lombok.Data;
 

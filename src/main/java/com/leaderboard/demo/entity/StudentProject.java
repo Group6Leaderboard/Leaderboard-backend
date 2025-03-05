@@ -15,10 +15,8 @@ public class StudentProject {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
-//    @ManyToOne
-//    @JoinColumn(name = "student_id")
-//    @JoinColumn(name = "project_id")
-//    private Project project;
+
+
 
     @ManyToOne
     @JoinColumn(name = "student_id", nullable = false)
