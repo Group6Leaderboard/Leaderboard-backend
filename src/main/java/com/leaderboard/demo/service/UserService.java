@@ -15,20 +15,26 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
+
     public User saveUser(User user) {
         return userRepository.save(user);
     }
+
 
     public Optional<User> getUserById(UUID userId) {
         return userRepository.findById(userId);
     }
 
+
     public List<User> getUsersByRole(String roleName) {
         return userRepository.findByRoleName(roleName);
     }
+
+
     public List<User> getAllUsers() {
         return userRepository.findByIsDeletedFalse();
     }
+
 
     public User deleteUser(UUID userId) {
         Optional<User> user = userRepository.findById(userId);
@@ -40,9 +46,8 @@ public class UserService {
         return null;
     }
 
+
     public Optional<User> getUserByEmail(String email) {
         return userRepository.findByEmail(email);
-
-
     }
 }

@@ -14,27 +14,27 @@ public class TaskService {
     @Autowired
     private TaskRepository taskRepository;
 
-    // Create or update a task
+
     public Task saveTask(Task task) {
         return taskRepository.save(task);
     }
 
-    // Get a task by ID
+
     public Task getTaskById(UUID taskId) {
         return taskRepository.findById(taskId).orElse(null);
     }
 
-    // Get all tasks for a specific project
+
     public List<Task> getTasksByProjectId(UUID projectId) {
         return taskRepository.findByProjectId(projectId);
     }
 
-    // Get all tasks
+
     public List<Task> getAllTasks() {
         return taskRepository.findAll();
     }
 
-    // Delete a task (soft delete)
+
     public Task deleteTask(UUID taskId) {
         Task task = taskRepository.findById(taskId).orElse(null);
         if (task != null) {

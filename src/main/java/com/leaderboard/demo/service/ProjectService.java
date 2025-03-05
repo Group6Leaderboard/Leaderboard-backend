@@ -14,27 +14,27 @@ public class ProjectService {
     @Autowired
     private ProjectRepository projectRepository;
 
-    // Create or update a project
+
     public Project saveProject(Project project) {
         return projectRepository.save(project);
     }
 
-    // Get a project by ID
+
     public Project getProjectById(UUID projectId) {
         return projectRepository.findById(projectId).orElse(null);
     }
 
-    // Get all active projects
+
     public List<Project> getAllProjects() {
         return projectRepository.findByIsDeletedFalse();
     }
 
-    // Get all projects assigned to a specific mentor
+
     public List<Project> getProjectsByMentor(UUID mentorId) {
         return projectRepository.findByMentorId(mentorId);
     }
 
-    // Delete a project (soft delete)
+
     public Project deleteProject(UUID projectId) {
         Project project = projectRepository.findById(projectId).orElse(null);
         if (project != null) {

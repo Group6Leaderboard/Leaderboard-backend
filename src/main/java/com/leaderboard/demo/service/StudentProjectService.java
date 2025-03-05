@@ -14,22 +14,22 @@ public class StudentProjectService {
     @Autowired
     private StudentProjectRepository studentProjectRepository;
 
-    // Assign project to student
+
     public StudentProject assignProjectToStudent(StudentProject studentProject) {
         return studentProjectRepository.save(studentProject);
     }
 
-    // Get all projects for a student
+
     public List<StudentProject> getProjectsForStudent(UUID studentId) {
         return studentProjectRepository.findByStudentId(studentId);
     }
 
-    // Get all students assigned to a project
+
     public List<StudentProject> getStudentsForProject(UUID projectId) {
         return studentProjectRepository.findByProjectId(projectId);
     }
 
-    // Delete the student-project relation (soft delete)
+
     public StudentProject deleteStudentProject(UUID studentProjectId) {
         StudentProject studentProject = studentProjectRepository.findById(studentProjectId).orElse(null);
         if (studentProject != null) {

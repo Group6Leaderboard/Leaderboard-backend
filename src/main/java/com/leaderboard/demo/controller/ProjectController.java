@@ -17,14 +17,14 @@ public class ProjectController {
     @Autowired
     private ProjectService projectService;
 
-    // Get all projects
+
     @GetMapping
     public ResponseEntity<List<Project>> getAllProjects() {
         List<Project> projects = projectService.getAllProjects();
         return new ResponseEntity<>(projects, HttpStatus.OK);
     }
 
-    // Get project by ID
+
     @GetMapping("/{id}")
     public ResponseEntity<Project> getProjectById(@PathVariable UUID id) {
         Project project = projectService.getProjectById(id);
@@ -32,14 +32,14 @@ public class ProjectController {
                 : new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
-    // Create or update a project
+
     @PostMapping
     public ResponseEntity<Project> createProject(@RequestBody Project project) {
         Project savedProject = projectService.saveProject(project);
         return new ResponseEntity<>(savedProject, HttpStatus.CREATED);
     }
 
-    // Delete a project (soft delete)
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Project> deleteProject(@PathVariable UUID id) {
         Project deletedProject = projectService.deleteProject(id);
