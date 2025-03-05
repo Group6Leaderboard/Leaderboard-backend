@@ -19,6 +19,7 @@ public class College {
     private String location;
 
     @Column(nullable = false, unique=true)
+
     private String email;
 
     private String password;
