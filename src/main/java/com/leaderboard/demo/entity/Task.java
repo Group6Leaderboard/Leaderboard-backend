@@ -1,6 +1,7 @@
 package com.leaderboard.demo.entity;
 
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -23,19 +24,18 @@ public class Task {
 
     @ManyToOne
     @JoinColumn(name = "assigned_by")
+    @JsonBackReference
     private User assignedBy;
-
-    @ManyToOne
-    @JoinColumn(name = "assigned_to")
-    private User assignedTo;
 
 
     @ManyToOne
     @JoinColumn(name = "project_id", referencedColumnName = "id")
-    private Project project;
-    private boolean isDeleted;
+    @JsonBackReference
+    private Project assignedTo;
+    private boolean isDeleted = false;
 
-    private LocalDateTime createAt;
+
+    private LocalDateTime createAt = LocalDateTime.now();
     private LocalDateTime updatedAt;
 
     public UUID getId() {
@@ -56,6 +56,14 @@ public class Task {
 
     public String getStatus() {
         return status;
+    }
+
+    public Project getAssignedTo() {
+        return assignedTo;
+    }
+
+    public void setAssignedTo(Project assignedTo) {
+        this.assignedTo = assignedTo;
     }
 
     public void setStatus(String status) {
@@ -94,13 +102,7 @@ public class Task {
         this.assignedBy = assignedBy;
     }
 
-    public User getAssignedTo() {
-        return assignedTo;
-    }
 
-    public void setAssignedTo(User assignedTo) {
-        this.assignedTo = assignedTo;
-    }
 
     public boolean isDeleted() {
         return isDeleted;

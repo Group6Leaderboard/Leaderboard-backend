@@ -29,13 +29,6 @@ public class UserController {
     }
 
 
-//    @GetMapping("/{id}")
-//    public ResponseEntity<User> getUserById(@PathVariable UUID id) {
-//        Optional<User> user = userService.getUserById(id);
-//        return user.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
-//                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
-//    }
-
     @GetMapping("/{id}")
     public ResponseEntity<Object> getUserById(@PathVariable UUID id) {
         Optional<User> user = userService.getUserById(id);
@@ -55,15 +48,6 @@ public class UserController {
         return new ResponseEntity<>(savedUser, HttpStatus.CREATED);
     }
 
-
-//    @DeleteMapping("/{id}")
-//    public ResponseEntity<User> deleteUser(@PathVariable UUID id) {
-//        User deletedUser = userService.deleteUser(id);
-//        return deletedUser != null ? new ResponseEntity<>(deletedUser, HttpStatus.OK)
-//                : new ResponseEntity<>(HttpStatus.NOT_FOUND);
-//
-//
-//    }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteUser(@PathVariable UUID id) {

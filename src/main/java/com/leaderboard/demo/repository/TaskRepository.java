@@ -9,5 +9,7 @@ import java.util.UUID;
 
 @Repository
 public interface TaskRepository extends JpaRepository<Task, UUID> {
-    List<Task> findByProjectId(UUID projectId);
+
+    List<Task> findByAssignedToId(UUID projectId);
+
 }

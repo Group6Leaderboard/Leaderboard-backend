@@ -26,10 +26,10 @@ public class Project {
     private User mentor;
 
     @ManyToOne
-    @JoinColumn(name = "college_id")
+    @JoinColumn(name = "college_id", referencedColumnName = "id")
     private User college;
 
-    private boolean isDeleted;
+    private boolean isDeleted= false;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

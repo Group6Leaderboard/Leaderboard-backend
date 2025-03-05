@@ -3,11 +3,24 @@ package com.leaderboard.demo.service;
 import com.leaderboard.demo.dto.UserDto;
 import com.leaderboard.demo.entity.College;
 import com.leaderboard.demo.entity.Role;
+import com.leaderboard.demo.config.JwtUtil;
+import com.leaderboard.demo.dto.LoginRequest;
+import com.leaderboard.demo.dto.LoginResponse;
+import com.leaderboard.demo.dto.UserSignupDto;
+import com.leaderboard.demo.entity.College;
+import com.leaderboard.demo.entity.Role;
+
 import com.leaderboard.demo.entity.User;
 import com.leaderboard.demo.repository.CollegeRepository;
 import com.leaderboard.demo.repository.RoleRepository;
 import com.leaderboard.demo.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -54,6 +67,18 @@ public class UserService {
     public User updateUser(UUID id, UserDto userDto) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+    @Autowired
+    private RoleRepository roleRepository;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+    @Autowired
+    private AuthenticationManager authenticationManager;
+    @Autowired
+    private JwtUtil jwtUtil;
+    @Autowired
+    private CollegeRepository collegeRepository;
+
+
 
         user.setEmail(userDto.getEmail());
         user.setName(userDto.getName());

@@ -5,6 +5,10 @@ build/
 # Ignore Maven wrapper files (except the jar)
 !.mvn/wrapper/maven-wrapper.jar
 
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+
 # Ignore IntelliJ and VS Code project settings
 .idea/
 .vscode/
@@ -36,4 +40,5 @@ src/main/resources/application.properties
 # Keep Maven and Gradle build directories ignored
 !**/src/main/**/build/
 !**/src/test/**/build/
+
 
