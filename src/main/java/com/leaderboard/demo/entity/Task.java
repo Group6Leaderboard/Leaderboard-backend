@@ -29,6 +29,10 @@ public class Task {
     @JoinColumn(name = "assigned_to")
     private User assignedTo;
 
+
+    @ManyToOne
+    @JoinColumn(name = "project_id", referencedColumnName = "id")
+    private Project project;
     private boolean isDeleted;
 
     private LocalDateTime createAt;
