@@ -19,16 +19,16 @@ public class StudentProject {
 
 
     @ManyToOne
-    @JoinColumn(name = "student_id", nullable = false)
+    @JoinColumn(name = "student_id",referencedColumnName = "id", nullable = false)
     private User student; // Assuming User entity represents students
 
     @ManyToOne
-    @JoinColumn(name = "project_id", nullable = false)
+    @JoinColumn(name = "project_id",referencedColumnName = "id", nullable = false)
     private Project project;
 
 
 
-    private boolean isDeleted;
+    private boolean isDeleted = false;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

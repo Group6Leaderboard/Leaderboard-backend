@@ -26,7 +26,9 @@ public class TaskService {
 
 
     public List<Task> getTasksByProjectId(UUID projectId) {
-        return taskRepository.findByProjectId(projectId);
+
+        return taskRepository.findByAssignedToId(projectId);
+
     }
 
 
