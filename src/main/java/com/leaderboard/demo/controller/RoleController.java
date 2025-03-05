@@ -10,11 +10,13 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/roles")
 public class RoleController {
+
     private final RoleService roleService;
 
     public RoleController(RoleService roleService){
         this.roleService=roleService;
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<Role> getRoleById(@PathVariable UUID id) {
@@ -23,6 +25,8 @@ public class RoleController {
 
     @PostMapping
     public ResponseEntity<Role> createRole(@RequestBody Role role){
+
         return ResponseEntity.ok(roleService.createRole(role));
+
     }
 }

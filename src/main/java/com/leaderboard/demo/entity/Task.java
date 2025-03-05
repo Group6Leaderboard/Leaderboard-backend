@@ -34,6 +34,7 @@ public class Task {
     private Project assignedTo;
     private boolean isDeleted = false;
 
+
     private LocalDateTime createAt = LocalDateTime.now();
     private LocalDateTime updatedAt;
 
