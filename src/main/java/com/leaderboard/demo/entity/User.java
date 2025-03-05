@@ -24,13 +24,13 @@ public class User {
     private int score;
 
     @ManyToOne
-    @JoinColumn(name = "role_id", nullable = false)
+    @JoinColumn(name = "role_id", referencedColumnName = "id", nullable = false)
     private Role role;
 
     private String phone;
 
     @ManyToOne
-    @JoinColumn(name = "college_id", nullable = true)
+    @JoinColumn(name = "college_id",referencedColumnName = "id", nullable = true)
     private College college;
 
     private boolean isDeleted = false;
