@@ -2,6 +2,7 @@ package com.leaderboard.demo.controller;
 
 import com.leaderboard.demo.entity.User;
 import com.leaderboard.demo.service.UserService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,7 @@ public class UserController {
     }
 
 
+
     @GetMapping("/{id}")
     public ResponseEntity<User> getUserById(@PathVariable UUID id) {
         Optional<User> user = userService.getUserById(id);
@@ -46,5 +48,6 @@ public class UserController {
         User deletedUser = userService.deleteUser(id);
         return deletedUser != null ? new ResponseEntity<>(deletedUser, HttpStatus.OK)
                 : new ResponseEntity<>(HttpStatus.NOT_FOUND);
+
     }
 }

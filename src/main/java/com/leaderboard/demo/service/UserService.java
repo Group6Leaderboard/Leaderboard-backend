@@ -6,15 +6,18 @@ import com.leaderboard.demo.dto.LoginResponse;
 import com.leaderboard.demo.dto.UserSignupDto;
 import com.leaderboard.demo.entity.College;
 import com.leaderboard.demo.entity.Role;
+
 import com.leaderboard.demo.entity.User;
 import com.leaderboard.demo.repository.CollegeRepository;
 import com.leaderboard.demo.repository.RoleRepository;
 import com.leaderboard.demo.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,6 +29,7 @@ public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+
     @Autowired
     private RoleRepository roleRepository;
     @Autowired
@@ -42,6 +46,7 @@ public class UserService {
     public User saveUser(User user) {
         return userRepository.save(user);
     }
+
 
     public Optional<User> getUserById(UUID userId) {
         return userRepository.findById(userId);
