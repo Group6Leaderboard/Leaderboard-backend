@@ -20,7 +20,7 @@ public class JwtUtil {
     private static final long EXPIRATION_TIME = 86400000;
 
     @Value("${jwt.secret}")
-    private String secretKey;// 1 day
+    private String secretKey;
 
     @PostConstruct
     public void init() {
@@ -39,5 +39,14 @@ public class JwtUtil {
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME)) // 1-day validity
                 .signWith(secretKeyDecoded, SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    public String extractUsername(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(secretKeyDecoded)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getSubject();
     }
 }

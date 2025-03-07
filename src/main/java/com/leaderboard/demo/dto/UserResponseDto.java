@@ -1,26 +1,30 @@
 package com.leaderboard.demo.dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.Data;
-
 import java.util.UUID;
 
-@Data
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class UserSignupDto {
+public class UserResponseDto {
+    private UUID id;
     private String name;
     private String email;
     private String phone;
-    private UUID collegeId;
     private String role;
-    private String password;
+    private UUID college;
 
-    public String getPassword() {
-        return password;
+    public UserResponseDto(UUID id, String name, String email, String phone, String role, UUID college) {
+        this.id = id;
+        this.name = name;
+        this.email = email;
+        this.phone = phone;
+        this.role = role;
+        this.college = college;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -47,19 +51,19 @@ public class UserSignupDto {
         this.phone = phone;
     }
 
-    public UUID getCollegeId() {
-        return collegeId;
-    }
-
-    public void setCollegeId(UUID collegeId) {
-        this.collegeId = collegeId;
-    }
-
     public String getRole() {
         return role;
     }
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public UUID getCollege() {
+        return college;
+    }
+
+    public void setCollege(UUID college) {
+        this.college = college;
     }
 }
