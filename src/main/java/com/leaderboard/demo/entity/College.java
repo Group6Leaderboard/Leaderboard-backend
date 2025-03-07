@@ -26,6 +26,7 @@ public class College {
 
     private int score;
     private String about;
+    @Column(nullable = false)
     private boolean isDeleted = false;
 
     private LocalDateTime createdAt = LocalDateTime.now();

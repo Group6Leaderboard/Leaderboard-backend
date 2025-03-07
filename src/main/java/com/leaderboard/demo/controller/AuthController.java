@@ -6,6 +6,7 @@ import com.leaderboard.demo.dto.LoginResponse;
 import com.leaderboard.demo.dto.UserSignupDto;
 import com.leaderboard.demo.entity.User;
 import com.leaderboard.demo.service.AuthService;
+import com.leaderboard.demo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,9 +21,14 @@ public class AuthController {
     @Autowired
     private AuthService authService;
 
+    @Autowired
+    private UserService userService;
+
     public AuthController(AuthService authService) {
         this.authService = authService;
     }
+
+
 
     @PostMapping("/signup")
     public ResponseEntity<User> signup(@RequestBody UserSignupDto signupDto) {

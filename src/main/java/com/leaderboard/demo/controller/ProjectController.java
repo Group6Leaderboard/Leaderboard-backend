@@ -2,6 +2,7 @@ package com.leaderboard.demo.controller;
 
 import com.leaderboard.demo.dto.ProjectDto;
 import com.leaderboard.demo.dto.UserDto;
+import com.leaderboard.demo.entity.College;
 import com.leaderboard.demo.entity.Project;
 import com.leaderboard.demo.entity.User;
 import com.leaderboard.demo.service.ProjectService;
@@ -19,12 +20,23 @@ public class ProjectController {
     @Autowired
     private ProjectService projectService;
 
-
     @GetMapping
-    public ResponseEntity<List<Project>> getAllProjects() {
+    public ResponseEntity<?> getAllProjects() {
         List<Project> projects = projectService.getAllProjects();
-        return new ResponseEntity<>(projects, HttpStatus.OK);
+
+        Map<String, Object> response = new LinkedHashMap<>();
+
+
+
+        response.put("status", 200);
+        response.put("message", "Ok");
+        response.put("data", projects);
+
+
+        return ResponseEntity.ok(response);
     }
+
+
 
 
     @GetMapping("/{id}")
@@ -48,12 +60,7 @@ public class ProjectController {
     }
 
 
-//    @DeleteMapping("/{id}")
-//    public ResponseEntity<Project> deleteProject(@PathVariable UUID id) {
-//        Project deletedProject = projectService.deleteProject(id);
-//        return deletedProject != null ? new ResponseEntity<>(deletedProject, HttpStatus.OK)
-//                : new ResponseEntity<>(HttpStatus.NOT_FOUND);
-//    }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteProject(@PathVariable UUID id){

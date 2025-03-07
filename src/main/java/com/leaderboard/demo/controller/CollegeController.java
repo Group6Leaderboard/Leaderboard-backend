@@ -7,7 +7,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -46,10 +48,28 @@ public class CollegeController {
                 : new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
+//    @DeleteMapping("/{id}")
+//    public ResponseEntity<College> deleteCollege(@PathVariable UUID id) {
+//        College deletedCollege = collegeService.deleteCollege(id);
+//        return deletedCollege != null ? new ResponseEntity<>(deletedCollege, HttpStatus.OK)
+//                : new ResponseEntity<>(HttpStatus.NOT_FOUND);
+//    }
+
     @DeleteMapping("/{id}")
-    public ResponseEntity<College> deleteCollege(@PathVariable UUID id) {
-        College deletedCollege = collegeService.deleteCollege(id);
-        return deletedCollege != null ? new ResponseEntity<>(deletedCollege, HttpStatus.OK)
-                : new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    public ResponseEntity<Object> deleteCollege(@PathVariable UUID id) {
+        boolean deleted = collegeService.softDeleteCollege(id); // ✅ Use instance method correctly
+
+        Map<String, String> response = new HashMap<>();
+        response.put("status", "200");
+
+        if (deleted) {
+            response.put("message", "College deleted successfully");
+        } else {
+            response.put("message", "No such college");
+        }
+
+        return ResponseEntity.ok(response);
     }
+
+
 }

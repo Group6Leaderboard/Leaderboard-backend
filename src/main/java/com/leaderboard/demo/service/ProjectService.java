@@ -28,10 +28,9 @@ public class ProjectService {
     }
 
 
-//    public Project getProjectById(UUID projectId) {
-//
-//        return projectRepository.findById(projectId).orElse(null);
-//    }
+public List<Project> getAllProjects(){
+        return projectRepository.findByIsDeletedFalse();
+}
 
     public Optional<Project> getProjectById(UUID projectId){
         return projectRepository.findById(projectId)
@@ -39,9 +38,6 @@ public class ProjectService {
     }
 
 
-    public List<Project> getAllProjects() {
-        return projectRepository.findByIsDeletedFalse();
-    }
 
 
     public List<Project> getProjectsByMentor(UUID mentorId) {
@@ -90,14 +86,7 @@ public class ProjectService {
     }
 
 
-//    public Project deleteProject(UUID projectId) {
-//        Project project = projectRepository.findById(projectId).orElse(null);
-//        if (project != null) {
-//            project.setDeleted(true);
-//            return projectRepository.save(project);
-//        }
-//        return null;
-//    }
+
 
     public boolean deleteProject(UUID projectId){
         Optional<Project> project=projectRepository.findById(projectId);

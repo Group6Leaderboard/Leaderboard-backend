@@ -23,10 +23,10 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())  // Disable CSRF (needed for PUT, DELETE, PATCH)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/api/**").permitAll()  // Allow POST
-                        .requestMatchers(HttpMethod.PUT, "/api/**").permitAll()   // Allow PUT
-                        .requestMatchers(HttpMethod.DELETE, "/api/**").permitAll() // Allow DELETE
-                        .requestMatchers(HttpMethod.GET, "/api/**").permitAll()   // Allow GET
+                        .requestMatchers(HttpMethod.POST, "/**").permitAll()  // Allow POST
+                        .requestMatchers(HttpMethod.PUT, "/**").permitAll()   // Allow PUT
+                        .requestMatchers(HttpMethod.DELETE, "/**").permitAll() // Allow DELETE
+                        .requestMatchers(HttpMethod.GET, "/**").permitAll()   // Allow GET
                         .anyRequest().authenticated()
                 );
         return http.build();
