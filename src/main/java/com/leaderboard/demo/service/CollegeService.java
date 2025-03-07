@@ -61,27 +61,20 @@ public class CollegeService {
     }
 
 
-//    public College deleteCollege(UUID collegeId) {
-//        College college = collegeRepository.findById(collegeId).orElse(null);
-//        if (college != null) {
-//            college.setDeleted(true);
-//            return collegeRepository.save(college);
-//        }
-//        return null;
-//    }
-public boolean softDeleteCollege(UUID id) { // ✅ Make sure it's NOT static
-    Optional<College> optionalCollege = collegeRepository.findByIdAndIsDeletedFalse(id);
-    if (optionalCollege.isPresent()) {
-        College college = optionalCollege.get();
-        if (college.isDeleted()) {
-            return false; // Already deleted
+
+    public boolean softDeleteCollege(UUID id) { // ✅ Make sure it's NOT static
+        Optional<College> optionalCollege = collegeRepository.findByIdAndIsDeletedFalse(id);
+        if (optionalCollege.isPresent()) {
+            College college = optionalCollege.get();
+            if (college.isDeleted()) {
+                return false; // Already deleted
+            }
+            college.setDeleted(true);
+            collegeRepository.save(college); // ✅ Save changes to database
+            return true;
         }
-        college.setDeleted(true);
-        collegeRepository.save(college); // ✅ Save changes to database
-        return true;
+        return false;
     }
-    return false;
-}
 
 
 }
