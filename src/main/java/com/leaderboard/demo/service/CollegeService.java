@@ -3,6 +3,7 @@ package com.leaderboard.demo.service;
 import com.leaderboard.demo.entity.College;
 import com.leaderboard.demo.repository.CollegeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -14,13 +15,20 @@ public class CollegeService {
 
     @Autowired
     private CollegeRepository collegeRepository;
+    private final PasswordEncoder passwordEncoder;
 
 
-    public College saveCollege(College college) {
-        return collegeRepository.save(college);
+    @Autowired
+    public CollegeService(CollegeRepository collegeRepository, PasswordEncoder passwordEncoder) {
+        this.collegeRepository = collegeRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
+    public College saveCollege(College college) {
 
+        college.setPassword(passwordEncoder.encode(college.getPassword()));
+        return collegeRepository.save(college);
+    }
     public College getCollegeById(UUID collegeId) {
         return collegeRepository.findById(collegeId).orElse(null);
     }
