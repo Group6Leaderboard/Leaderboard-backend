@@ -21,9 +21,12 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf.disable())  // Disable CSRF (needed for PUT, DELETE, PATCH)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/**").permitAll()  // Allow POST
+                        .requestMatchers(HttpMethod.PUT, "/**").permitAll()   // Allow PUT
+                        .requestMatchers(HttpMethod.DELETE, "/**").permitAll() // Allow DELETE
+                        .requestMatchers(HttpMethod.GET, "/**").permitAll()   // Allow GET
                         .anyRequest().authenticated()
                 );
         return http.build();

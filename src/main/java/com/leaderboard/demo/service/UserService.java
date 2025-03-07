@@ -1,5 +1,8 @@
 package com.leaderboard.demo.service;
 
+import com.leaderboard.demo.dto.UserDto;
+import com.leaderboard.demo.entity.College;
+import com.leaderboard.demo.entity.Role;
 import com.leaderboard.demo.config.JwtUtil;
 import com.leaderboard.demo.dto.LoginRequest;
 import com.leaderboard.demo.dto.LoginResponse;
@@ -29,27 +32,57 @@ public class UserService {
 
     @Autowired
     private UserRepository userRepository;
-
-    @Autowired
-    private RoleRepository roleRepository;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-    @Autowired
-    private AuthenticationManager authenticationManager;
-    @Autowired
-    private JwtUtil jwtUtil;
     @Autowired
     private CollegeRepository collegeRepository;
+    @Autowired
+    private RoleRepository roleRepository;
 
+    public User AddUser(UserDto userDTO) {
+        User user = new User();
+        user.setEmail(userDTO.getEmail());
+        user.setName(userDTO.getName());
+        user.setPassword(userDTO.getPassword());
+        user.setPhone(userDTO.getPhone());
+        user.setScore(userDTO.getScore());
 
+        Role role = roleRepository.findById(userDTO.getRole_id())
+                .orElseThrow(() -> new RuntimeException("Role not found"));
+        user.setRole(role);
 
+        if (userDTO.getCollege_id() != null) {
+            College college = collegeRepository.findById(userDTO.getCollege_id())
+                    .orElseThrow(() -> new RuntimeException("college not found"));
+            user.setCollege(college);
+        } else {
+            user.setCollege(null);
+        }
+        return userRepository.save(user);
+
+//        College college = collegeRepository.findById(userDTO.getCollege_id())
+//                .orElseThrow(() -> new RuntimeException("College not found"));
+//        user.setCollege(college);
+//
+//        return userRepository.save(user);
+    }
+    public User updateUser(UUID id, UserDto userDto) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setEmail(userDto.getEmail());
+        user.setName(userDto.getName());
+        user.setPassword(userDto.getPassword());
+        user.setPhone(userDto.getPhone());
+        user.setScore(userDto.getScore());
+
+        return userRepository.save(user);
+    }
     public User saveUser(User user) {
         return userRepository.save(user);
     }
 
 
     public Optional<User> getUserById(UUID userId) {
-        return userRepository.findById(userId);
+        return userRepository.findById(userId)
+        .filter(user ->!user.isDeleted());
     }
 
 
@@ -63,14 +96,15 @@ public class UserService {
     }
 
 
-    public User deleteUser(UUID userId) {
+    public boolean deleteUser(UUID userId) {
         Optional<User> user = userRepository.findById(userId);
         if (user.isPresent()) {
             User u = user.get();
             u.setDeleted(true);
-            return userRepository.save(u);
+            userRepository.save(u);
+            return true;
         }
-        return null;
+        return false;
     }
 
 

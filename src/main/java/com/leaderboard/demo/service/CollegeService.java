@@ -1,14 +1,21 @@
 package com.leaderboard.demo.service;
 
 import com.leaderboard.demo.entity.College;
+import com.leaderboard.demo.entity.Task;
 import com.leaderboard.demo.repository.CollegeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import org.springframework.http.ResponseEntity;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
+
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class CollegeService {
@@ -30,6 +37,7 @@ public class CollegeService {
         return collegeRepository.save(college);
     }
     public College getCollegeById(UUID collegeId) {
+
         return collegeRepository.findById(collegeId).orElse(null);
     }
 
@@ -64,12 +72,20 @@ public class CollegeService {
     }
 
 
-    public College deleteCollege(UUID collegeId) {
-        College college = collegeRepository.findById(collegeId).orElse(null);
-        if (college != null) {
+
+    public boolean softDeleteCollege(UUID id) { // ✅ Make sure it's NOT static
+        Optional<College> optionalCollege = collegeRepository.findByIdAndIsDeletedFalse(id);
+        if (optionalCollege.isPresent()) {
+            College college = optionalCollege.get();
+            if (college.isDeleted()) {
+                return false; // Already deleted
+            }
             college.setDeleted(true);
-            return collegeRepository.save(college);
+            collegeRepository.save(college); // ✅ Save changes to database
+            return true;
         }
-        return null;
+        return false;
     }
+
+
 }

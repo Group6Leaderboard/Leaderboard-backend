@@ -5,6 +5,7 @@ import com.leaderboard.demo.dto.*;
 import com.leaderboard.demo.entity.User;
 import com.leaderboard.demo.repository.UserRepository;
 import com.leaderboard.demo.service.AuthService;
+import com.leaderboard.demo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,11 +20,15 @@ public class AuthController {
     private final UserRepository userRepository;
 
     @Autowired
+
     public AuthController(AuthService authService, JwtUtil jwtUtil, UserRepository userRepository) {
+
         this.authService = authService;
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
     }
+
+
 
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse<UserResponseDto>> signup(
