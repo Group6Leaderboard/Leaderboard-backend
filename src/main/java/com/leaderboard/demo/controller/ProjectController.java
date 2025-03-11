@@ -1,14 +1,17 @@
 package com.leaderboard.demo.controller;
 
+import com.leaderboard.demo.dto.ApiResponse;
 import com.leaderboard.demo.dto.ProjectDto;
 import com.leaderboard.demo.dto.UserDto;
 import com.leaderboard.demo.entity.College;
 import com.leaderboard.demo.entity.Project;
 import com.leaderboard.demo.entity.User;
+import com.leaderboard.demo.repository.UserRepository;
 import com.leaderboard.demo.service.ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -19,6 +22,9 @@ public class ProjectController {
 
     @Autowired
     private ProjectService projectService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @GetMapping
     public ResponseEntity<?> getAllProjects() {
@@ -37,8 +43,6 @@ public class ProjectController {
     }
 
 
-
-
     @GetMapping("/{id}")
     public ResponseEntity<Object> getProjectById(@PathVariable UUID id) {
        Optional<Project> project=projectService.getProjectById(id);
@@ -52,12 +56,23 @@ public class ProjectController {
 
 
 
-
     @PostMapping
-    public ResponseEntity<Project> createProject(@RequestBody Project project) {
-        Project savedProject = projectService.saveProject(project);
-        return new ResponseEntity<>(savedProject, HttpStatus.CREATED);
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<ProjectDto>> createProject(@RequestBody ProjectDto projectDto) {
+        try {
+            ProjectDto savedProject = projectService.createProject(projectDto);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(new ApiResponse<>(201, "Project created successfully", savedProject));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(400, e.getMessage(), null));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(500, "An error occurred", null));
+        }
     }
+
+
 
 
 

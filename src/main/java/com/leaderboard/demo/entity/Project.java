@@ -27,11 +27,11 @@ public class Project {
 
     @ManyToOne
     @JoinColumn(name = "college_id", referencedColumnName = "id")
-    private User college;
+    private College college;
 
     private boolean isDeleted= false;
 
-    private LocalDateTime createdAt;
+    private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt;
 
 
@@ -75,11 +75,11 @@ public class Project {
         this.mentor = mentor;
     }
 
-    public User getCollege() {
+    public College getCollege() {
         return college;
     }
 
-    public void setCollege(User college) {
+    public void setCollege(College college) {
         this.college = college;
     }
 

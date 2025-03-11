@@ -58,11 +58,6 @@ public class UserService {
         }
         return userRepository.save(user);
 
-//        College college = collegeRepository.findById(userDTO.getCollege_id())
-//                .orElseThrow(() -> new RuntimeException("College not found"));
-//        user.setCollege(college);
-//
-//        return userRepository.save(user);
     }
     public User updateUser(UUID id, UserDto userDto) {
         User user = userRepository.findById(id)

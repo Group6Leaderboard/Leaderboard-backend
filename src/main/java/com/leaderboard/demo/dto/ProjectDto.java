@@ -1,8 +1,14 @@
 package com.leaderboard.demo.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.Data;
+
 import java.util.UUID;
 
+@Data
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ProjectDto {
+    private UUID id;
     private String name;
     private String description;
     private Integer score;

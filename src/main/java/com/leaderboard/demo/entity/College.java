@@ -26,7 +26,15 @@ public class College {
 
     private int score;
     private String about;
-    @Column(nullable = false)
+
+    @ManyToOne
+    @JoinColumn(name = "role_id", nullable = true)
+    private Role role;
+    public College() {
+        this.role = new Role();
+        this.role.setId(UUID.fromString("9921539c-8a5d-4901-9e07-aca7c5f9c768"));
+    }
+
     private boolean isDeleted = false;
 
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -111,4 +119,7 @@ public class College {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
+
+    public Role getRole() { return role; }
+    public void setRole(Role role) { this.role = role; }
 }

@@ -60,20 +60,19 @@ public class CollegeService {
             if (updatedCollege.getPassword() != null) {
                 existingCollege.setPassword(updatedCollege.getPassword());
             }
-            existingCollege.setScore(updatedCollege.getScore()); // Assuming score can be 0
+            existingCollege.setScore(updatedCollege.getScore());
             if (updatedCollege.getAbout() != null) {
                 existingCollege.setAbout(updatedCollege.getAbout());
             }
 
-            existingCollege.setUpdatedAt(LocalDateTime.now()); // Track update timestamp
-
+            existingCollege.setUpdatedAt(LocalDateTime.now());
             return collegeRepository.save(existingCollege);
         }).orElse(null);
     }
 
 
 
-    public boolean softDeleteCollege(UUID id) { // ✅ Make sure it's NOT static
+    public boolean softDeleteCollege(UUID id) {
         Optional<College> optionalCollege = collegeRepository.findByIdAndIsDeletedFalse(id);
         if (optionalCollege.isPresent()) {
             College college = optionalCollege.get();
@@ -81,7 +80,7 @@ public class CollegeService {
                 return false; // Already deleted
             }
             college.setDeleted(true);
-            collegeRepository.save(college); // ✅ Save changes to database
+            collegeRepository.save(college);
             return true;
         }
         return false;

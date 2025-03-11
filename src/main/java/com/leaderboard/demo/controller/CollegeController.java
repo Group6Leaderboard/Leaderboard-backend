@@ -48,12 +48,7 @@ public class CollegeController {
                 : new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
-//    @DeleteMapping("/{id}")
-//    public ResponseEntity<College> deleteCollege(@PathVariable UUID id) {
-//        College deletedCollege = collegeService.deleteCollege(id);
-//        return deletedCollege != null ? new ResponseEntity<>(deletedCollege, HttpStatus.OK)
-//                : new ResponseEntity<>(HttpStatus.NOT_FOUND);
-//    }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Object> deleteCollege(@PathVariable UUID id) {

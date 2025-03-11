@@ -2,7 +2,9 @@ package com.leaderboard.demo.controller;
 
 import com.leaderboard.demo.config.JwtUtil;
 import com.leaderboard.demo.dto.*;
+import com.leaderboard.demo.entity.College;
 import com.leaderboard.demo.entity.User;
+import com.leaderboard.demo.repository.CollegeRepository;
 import com.leaderboard.demo.repository.UserRepository;
 import com.leaderboard.demo.service.AuthService;
 import com.leaderboard.demo.service.UserService;
@@ -18,16 +20,17 @@ public class AuthController {
     private final AuthService authService;
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
+    private final CollegeRepository collegeRepository;
 
     @Autowired
 
-    public AuthController(AuthService authService, JwtUtil jwtUtil, UserRepository userRepository) {
+    public AuthController(AuthService authService, JwtUtil jwtUtil, UserRepository userRepository, CollegeRepository collegeRepository) {
 
         this.authService = authService;
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
+        this.collegeRepository = collegeRepository;
     }
-
 
 
     @PostMapping("/signup")
@@ -36,7 +39,6 @@ public class AuthController {
             @RequestHeader("Authorization") String token) {
 
         try {
-            // Extract token and authenticate admin
             if (token == null || !token.startsWith("Bearer ")) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ApiResponse<>(401, "Invalid token format", null));
@@ -45,20 +47,25 @@ public class AuthController {
             String jwt = token.substring(7);
             String email = jwtUtil.extractUsername(jwt);
 
-            User loggedInUser = userRepository.findByEmail(email)
-                    .orElse(null);
+            User loggedInUser = userRepository.findByEmail(email).orElse(null);
 
-            if (loggedInUser == null) {
+            College loggedInCollege = collegeRepository.findByEmail(email).orElse(null);
+
+            if (loggedInUser != null) {
+                return authService.signupByUser(signupDto, loggedInUser);
+            } else if (loggedInCollege != null) {
+
+                return authService.signupByCollege(signupDto, loggedInCollege);
+            } else {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ApiResponse<>(401, "Invalid authentication", null));
             }
-
-            return authService.signup(signupDto, loggedInUser);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ApiResponse<>(400, "Failure: " + e.getMessage(), null));
         }
     }
+
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponse>> login(@RequestBody LoginRequest loginRequest) {

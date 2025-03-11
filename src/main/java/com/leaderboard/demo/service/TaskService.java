@@ -1,104 +1,21 @@
-//package com.leaderboard.demo.service;
-//
-//import com.leaderboard.demo.entity.Task;
-//import com.leaderboard.demo.repository.TaskRepository;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.stereotype.Service;
-//import org.springframework.web.multipart.MultipartFile;
-//
-//import java.io.IOException;
-//import java.util.List;
-//import java.util.UUID;
-//import java.util.stream.Collectors;
-//
-//@Service
-//public class TaskService {
-//
-//    @Autowired
-//    private TaskRepository taskRepository;
-//
-//
-////    public Task saveTask(Task task) {
-////        return taskRepository.save(task);
-////    }
-//
-//    public Task saveTask(String title, String description, UUID assignedToId, MultipartFile file){
-//        Task task=new Task();
-//        task.setTitle(title);
-//        task.setDescription(description);
-//        task.setAssignedToId(assignedToId);
-//        task.setDeleted(false);
-//
-//        if(file !=null && !file.isEmpty()){
-//            try{
-//                task.setFile(file.getBytes());
-//                task.setFileName(file.getOriginalFilename());
-//            }catch (IOException e){
-//                throw new RuntimeException("File upload failed",e);
-//            }
-//        }
-//        return taskRepository.save(task);
-//    }
-//
-//
-////    public Task getTaskById(UUID taskId) {
-////        return taskRepository.findById(taskId).orElse(null);
-////    }
-//
-//    public Task getTaskById(UUID taskId){
-//        Task task=taskRepository.findById(taskId).orElse(null);
-//        return (task !=null && !task.isDeleted()) ? task :null;
-//    }
-//
-//
-//    public List<Task> getTasksByProjectId(UUID projectId) {
-//
-//        return taskRepository.findByAssignedToId(projectId);
-//
-//    }
-//
-////
-////    public List<Task> getAllTasks() {
-////        return taskRepository.findAll();
-////    }
-//
-//    public List<Task> getAllTasks(){
-//        return taskRepository.findAll().stream()
-//                .filter(task -> !task.isDeleted())
-//                .collect(Collectors.toList());
-//    }
-//
-////
-////    public Task deleteTask(UUID taskId) {
-////        Task task = taskRepository.findById(taskId).orElse(null);
-////        if (task != null) {
-////            task.setDeleted(true);
-////            return taskRepository.save(task);
-////        }
-////        return null;
-////    }
-//
-//    public boolean deleteTask(UUID taskId){
-//        Task task=taskRepository.findById(taskId).orElse(null);
-//        if(task !=null){
-//            task.setDeleted(true);
-//            taskRepository.save(task);
-//            return true;
-//        }
-//      return false;
-//    }
-//}
 
 package com.leaderboard.demo.service;
 
 import com.leaderboard.demo.dto.TaskDTO;
+import com.leaderboard.demo.entity.Project;
 import com.leaderboard.demo.entity.Task;
+import com.leaderboard.demo.entity.User;
+import com.leaderboard.demo.repository.ProjectRepository;
 import com.leaderboard.demo.repository.TaskRepository;
 
+import com.leaderboard.demo.repository.UserRepository;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -108,8 +25,13 @@ import java.util.stream.Collectors;
 @Service
 public class TaskService {
     private final TaskRepository taskRepository;
-     public TaskService(TaskRepository taskRepository){
+    private final UserRepository userRepository;
+    private final ProjectRepository projectRepository;
+
+     public TaskService(TaskRepository taskRepository, UserRepository userRepository, ProjectRepository projectRepository){
          this.taskRepository=taskRepository;
+         this.userRepository = userRepository;
+         this.projectRepository=projectRepository;
 
      }
 
@@ -130,7 +52,7 @@ public class TaskService {
         return dto;
     }
 
-    // Convert DTO -> Entity
+
     private Task convertToEntity(TaskDTO dto, MultipartFile file) throws IOException {
         Task task = new Task();
         task.setId(dto.getId());
@@ -152,6 +74,29 @@ public class TaskService {
     }
 
      public TaskDTO saveTask(TaskDTO taskDTO,MultipartFile file) throws IOException{
+         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+         String email = auth.getName();
+
+         Optional<User> mentorOpt = userRepository.findByEmail(email);
+         if (!mentorOpt.isPresent()) {
+             throw new IllegalStateException("Authenticated mentor not found");
+         }
+         User mentor = mentorOpt.get();
+
+         if (taskDTO.getAssignedTO() == null) {
+             throw new IllegalArgumentException("Task must be assigned to a project");
+         }
+
+         Optional<Project> projectOpt = projectRepository.findById(taskDTO.getAssignedTO());
+         if (!projectOpt.isPresent()) {
+             throw new IllegalArgumentException("Project not found with ID: " + taskDTO.getAssignedTO());
+         }
+         Project project = projectOpt.get();
+
+         if (!project.getMentor().getId().equals(mentor.getId())) {
+             throw new AccessDeniedException("You are not assigned to this project");
+         }
+
          Task task = convertToEntity(taskDTO, file);
          Task savedTask = taskRepository.save(task);
          return convertToDTO(savedTask);
@@ -172,7 +117,7 @@ public class TaskService {
         if (optionalTask.isPresent()) {
             Task task = optionalTask.get();
             task.setDescription(taskDTO.getDescription());
-            task.setStatus(taskDTO.getStatus());
+            task.setStatus("Not submitted");
             task.setName(taskDTO.getName());
             task.setScore(taskDTO.getScore());
 
@@ -192,13 +137,40 @@ public class TaskService {
         if (optionalTask.isPresent()) {
             Task task = optionalTask.get();
             if (task.isDeleted()) {
-                return false; // Task is already deleted
+                return false;
             }
             task.setDeleted(true);
             taskRepository.save(task);
             return true;
         }
         return false;
+    }
+    public TaskDTO scoreTask(UUID id, int score) {
+        Optional<Task> optionalTask = taskRepository.findById(id);
+        if (optionalTask.isPresent()) {
+            Task task = optionalTask.get();
+            task.setScore(score);
+            task.setStatus("Completed");
+            task.setUpdatedAt(LocalDateTime.now());
+            Task updatedTask = taskRepository.save(task);
+            return convertToDTO(updatedTask);
+        }
+        return null;
+    }
+
+    public TaskDTO updateTaskFile(UUID id, MultipartFile file) throws IOException {
+        Optional<Task> optionalTask = taskRepository.findById(id);
+        if (optionalTask.isPresent()) {
+            Task task = optionalTask.get();
+            if (file != null && !file.isEmpty()) {
+                task.setFile(file.getBytes());
+                task.setStatus("Submitted");
+                task.setUpdatedAt(LocalDateTime.now());
+                Task updatedTask = taskRepository.save(task);
+                return convertToDTO(updatedTask);
+            }
+        }
+        return null;
     }
 
     }

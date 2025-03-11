@@ -2,6 +2,8 @@ package com.leaderboard.demo.repository;
 
 import com.leaderboard.demo.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -14,6 +16,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     List<User> findByIsDeletedFalse();
     List<User> findByRoleName(String roleName);
     List<User> findByCollegeId(UUID collegeId);
+
+
 
 
 }

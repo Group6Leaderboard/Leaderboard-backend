@@ -9,7 +9,6 @@ import java.util.UUID;
 
 @Entity
 @Data
-
 public class StudentProject {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -30,7 +29,7 @@ public class StudentProject {
 
     private boolean isDeleted = false;
 
-    private LocalDateTime createdAt;
+    private LocalDateTime createdAt=LocalDateTime.now();
     private LocalDateTime updatedAt;
 
     public UUID getId() {

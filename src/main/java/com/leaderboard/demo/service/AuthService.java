@@ -15,6 +15,8 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 public class AuthService {
 
@@ -40,53 +42,48 @@ public class AuthService {
         this.jwtUtil = jwtUtil;
         this.collegeRepository = collegeRepository;
     }
-
-    public ResponseEntity<ApiResponse<UserResponseDto>> signup(UserSignupDto userSignupDto, User loggedInUser) {
+    public ResponseEntity<ApiResponse<UserResponseDto>> signupByUser(UserSignupDto userSignupDto, User loggedInUser) {
         try {
-            // Only admins can register users
-            if (loggedInUser == null || !loggedInUser.getRole().getName().equalsIgnoreCase("ADMIN")) {
+            boolean isAdmin = loggedInUser.getRole().getName().equalsIgnoreCase("ADMIN");
+
+            if (!isAdmin) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(new ApiResponse<>(403, "Unauthorized: Admin only", null));
+                        .body(new ApiResponse<>(403, "Unauthorized: Only Admin can register users", null));
             }
 
-            // Check if email already exists
             if (userRepository.existsByEmail(userSignupDto.getEmail())) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(new ApiResponse<>(400, "User already exists", null));
             }
 
-            // Find role
-            Role role = roleRepository.findByName(userSignupDto.getRole().toUpperCase())
+            Role assignedRole = roleRepository.findByName(userSignupDto.getRole().toUpperCase())
                     .orElse(null);
 
-            if (role == null) {
+            if (assignedRole == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new ApiResponse<>(400, "Role not found", null));
+                        .body(new ApiResponse<>(400, "Invalid role", null));
             }
 
-            // Create new user
+            College college = null;
+            if (userSignupDto.getCollegeId() != null) {
+                college = collegeRepository.findById(userSignupDto.getCollegeId()).orElse(null);
+                if (college == null) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body(new ApiResponse<>(400, "College not found", null));
+                }
+            }
+
             User user = new User();
             user.setPassword(passwordEncoder.encode(userSignupDto.getPassword() != null ?
                     userSignupDto.getPassword() : "Welcome@123"));
             user.setName(userSignupDto.getName());
             user.setEmail(userSignupDto.getEmail());
             user.setPhone(userSignupDto.getPhone());
-            user.setRole(role);
+            user.setRole(assignedRole);
+            user.setCollege(college);
 
-            // Assign college if provided
-            if (userSignupDto.getCollegeId() != null) {
-                College college = collegeRepository.findById(userSignupDto.getCollegeId()).orElse(null);
-                if (college == null) {
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                            .body(new ApiResponse<>(400, "College not found", null));
-                }
-                user.setCollege(college);
-            }
-
-            // Save user
             User savedUser = userRepository.save(user);
 
-            // Convert user entity to response DTO (excludes password)
             UserResponseDto responseDto = new UserResponseDto(
                     savedUser.getId(),
                     savedUser.getName(),
@@ -97,30 +94,85 @@ public class AuthService {
             );
 
             return ResponseEntity.ok(new ApiResponse<>(200, "User registered successfully", responseDto));
-
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>(500, "An error occurred during registration", null));
+                    .body(new ApiResponse<>(500, "An error occurred during registration: " + e.getMessage(), null));
         }
     }
 
+    public ResponseEntity<ApiResponse<UserResponseDto>> signupByCollege(UserSignupDto userSignupDto, College loggedInCollege) {
+        try {
+            if (userRepository.existsByEmail(userSignupDto.getEmail())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ApiResponse<>(400, "User already exists", null));
+            }
+
+            Role studentRole = roleRepository.findByName("STUDENT").orElse(null);
+
+            if (studentRole == null) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(new ApiResponse<>(500, "Default student role not found", null));
+            }
+
+            User user = new User();
+            user.setPassword(passwordEncoder.encode(userSignupDto.getPassword() != null ?
+                    userSignupDto.getPassword() : "Welcome@123"));
+            user.setName(userSignupDto.getName());
+            user.setEmail(userSignupDto.getEmail());
+            user.setPhone(userSignupDto.getPhone());
+            user.setRole(studentRole);
+            user.setCollege(loggedInCollege);
+
+            User savedUser = userRepository.save(user);
+
+            UserResponseDto responseDto = new UserResponseDto(
+                    savedUser.getId(),
+                    savedUser.getName(),
+                    savedUser.getEmail(),
+                    savedUser.getPhone(),
+                    savedUser.getRole().getName(),
+                    savedUser.getCollege().getId()
+            );
+
+            return ResponseEntity.ok(new ApiResponse<>(200, "Student registered successfully", responseDto));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(500, "An error occurred during registration: " + e.getMessage(), null));
+        }
+    }
+
+
+
     public ResponseEntity<ApiResponse<LoginResponse>> login(LoginRequest loginRequest) {
         try {
-            // Fetch user by email
             User user = userRepository.findByEmail(loginRequest.getEmail()).orElse(null);
+            College college = null;
+            if (user == null) {
+                college = collegeRepository.findByEmail(loginRequest.getEmail()).orElse(null);
+            }
 
-            // Generic error message for either user not found or invalid password
-            if (user == null || !passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+            if ((user == null && college == null) ||
+                    (user != null && !passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) ||
+                    (college != null && !passwordEncoder.matches(loginRequest.getPassword(), college.getPassword()))) {
+
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ApiResponse<>(401, "Invalid credentials", null));
             }
 
-            // Generate JWT token
-            String token = jwtUtil.generateToken(user);
+            String token;
+            String role;
+
+            if (user != null) {
+                token = jwtUtil.generateToken(user);
+                role = user.getRole().getName();
+            } else {
+                token = jwtUtil.generateToken(college);
+                role = "COLLEGE";
+            }
 
             LoginResponse loginResponse = new LoginResponse();
             loginResponse.setToken(token);
-            loginResponse.setRole(user.getRole().getName());
+            loginResponse.setRole(role);
 
             return ResponseEntity.ok(new ApiResponse<>(200, "Login successful", loginResponse));
 
@@ -129,4 +181,5 @@ public class AuthService {
                     .body(new ApiResponse<>(500, "An error occurred during login", null));
         }
     }
+
 }

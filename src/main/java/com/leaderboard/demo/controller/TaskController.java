@@ -81,6 +81,7 @@ import com.leaderboard.demo.entity.Task;
 import com.leaderboard.demo.service.TaskService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -97,6 +98,7 @@ public class TaskController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('MENTOR')")
     public ResponseEntity<TaskDTO> createTask(
             @RequestPart("task") String taskJson,
             @RequestPart(value = "file", required = false) MultipartFile file) throws IOException {
@@ -134,6 +136,27 @@ public class TaskController {
 
         }
     }
+
+    @PutMapping("/{id}/file")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<TaskDTO> updateTaskFile(
+            @PathVariable UUID id,
+            @RequestPart(value = "file", required = true) MultipartFile file) throws IOException {
+
+        TaskDTO updatedTask = taskService.updateTaskFile(id, file);
+        return updatedTask != null ? ResponseEntity.ok(updatedTask) : ResponseEntity.notFound().build();
+    }
+    @PutMapping("/{id}/score")
+    @PreAuthorize("hasRole('MENTOR')")
+    public ResponseEntity<TaskDTO> scoreTask(
+            @PathVariable UUID id,
+            @RequestBody int score) {
+
+        TaskDTO updatedTask = taskService.scoreTask(id, score);
+        return updatedTask != null ? ResponseEntity.ok(updatedTask) : ResponseEntity.notFound().build();
+    }
+
+
 
     @PutMapping("/{id}")
     public ResponseEntity<TaskDTO> updateTask(
