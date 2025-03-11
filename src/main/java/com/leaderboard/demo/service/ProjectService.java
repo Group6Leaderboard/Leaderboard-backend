@@ -1,11 +1,16 @@
 package com.leaderboard.demo.service;
 
+import com.leaderboard.demo.dto.ApiResponse;
 import com.leaderboard.demo.dto.ProjectDto;
+import com.leaderboard.demo.entity.College;
 import com.leaderboard.demo.entity.Project;
 import com.leaderboard.demo.entity.User;
+import com.leaderboard.demo.repository.CollegeRepository;
 import com.leaderboard.demo.repository.ProjectRepository;
 import com.leaderboard.demo.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -21,6 +26,8 @@ public class ProjectService {
 
    @Autowired
    private UserRepository userRepository;
+   @Autowired
+   private CollegeRepository collegeRepository;
 
     public Project saveProject(Project project) {
 
@@ -45,13 +52,11 @@ public List<Project> getAllProjects(){
         return projectRepository.findByMentorId(mentorId);
     }
 
-    // ✅ New PUT method for updating projects
     public Project updateProject(UUID projectId, ProjectDto projectDto) {
         Optional<Project> projectOptional = projectRepository.findById(projectId);
         if (projectOptional.isPresent()) {
             Project project = projectOptional.get();
 
-            // Update only non-null fields
             if (projectDto.getName() != null) {
                 project.setName(projectDto.getName());
             }
@@ -62,21 +67,18 @@ public List<Project> getAllProjects(){
                 project.setScore(projectDto.getScore());
             }
 
-            // Update Mentor if provided
             if (projectDto.getMentorId() != null) {
                 User mentor = userRepository.findById(projectDto.getMentorId())
                         .orElseThrow(() -> new RuntimeException("Mentor not found"));
                 project.setMentor(mentor);
             }
 
-            // Update College if provided
             if (projectDto.getCollegeId() != null) {
-                User college = userRepository.findById(projectDto.getCollegeId())
+                College college = collegeRepository.findById(projectDto.getCollegeId())
                         .orElseThrow(() -> new RuntimeException("College not found"));
                 project.setCollege(college);
             }
 
-            // Update timestamp
             project.setUpdatedAt(LocalDateTime.now());
 
             return projectRepository.save(project);
@@ -98,6 +100,39 @@ public List<Project> getAllProjects(){
         }
         return false;
     }
+
+    public ProjectDto createProject(ProjectDto projectDto) {
+        Project project = new Project();
+        project.setName(projectDto.getName());
+        project.setDescription(projectDto.getDescription());
+
+        College college = null;
+        if (projectDto.getCollegeId() != null) {
+            college = collegeRepository.findById(projectDto.getCollegeId()).orElse(null);
+        }
+        project.setCollege(college);
+
+        Optional<User> mentorOptional = userRepository.findById(projectDto.getMentorId());
+        if (mentorOptional.isEmpty()) {
+            throw new IllegalArgumentException("Mentor not found");
+        }
+        project.setMentor(mentorOptional.get());
+        project.setCreatedAt(LocalDateTime.now());
+
+        Project savedProject = projectRepository.save(project);
+
+        ProjectDto responseDto = new ProjectDto();
+        responseDto.setId(savedProject.getId());
+        responseDto.setName(savedProject.getName());
+        responseDto.setDescription(savedProject.getDescription());
+        responseDto.setCollegeId(savedProject.getCollege() != null ? savedProject.getCollege().getId() : null);
+        responseDto.setMentorId(savedProject.getMentor() != null ? savedProject.getMentor().getId() : null);
+        responseDto.setScore(savedProject.getScore());
+
+        return responseDto;
+    }
+
+
 
 
 }

@@ -16,7 +16,5 @@ public interface CollegeRepository extends JpaRepository<College, UUID> {
 
     Optional<College> findByIdAndIsDeletedFalse(UUID id);
 
-
-
-
+    Optional<College> findByEmail(String email);
 }
