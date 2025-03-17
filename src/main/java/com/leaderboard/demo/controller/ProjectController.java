@@ -11,9 +11,11 @@ import com.leaderboard.demo.service.ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import javax.naming.AuthenticationException;
 import java.util.*;
 
 @RestController
@@ -43,6 +45,12 @@ public class ProjectController {
     }
 
 
+
+
+
+
+
+
     @GetMapping("/{id}")
     public ResponseEntity<Object> getProjectById(@PathVariable UUID id) {
        Optional<Project> project=projectService.getProjectById(id);
@@ -66,7 +74,12 @@ public class ProjectController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ApiResponse<>(400, e.getMessage(), null));
-        } catch (Exception e) {
+        } catch (AccessDeniedException e){
+            return  ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ApiResponse<>(403,"You do not have permission to create a project",null));
+        }
+
+        catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse<>(500, "An error occurred", null));
         }

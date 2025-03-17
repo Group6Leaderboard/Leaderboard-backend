@@ -1,5 +1,6 @@
 package com.leaderboard.demo.controller;
 
+import com.leaderboard.demo.dto.CollegeDTO;
 import com.leaderboard.demo.entity.College;
 import com.leaderboard.demo.service.CollegeService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,25 +23,27 @@ public class CollegeController {
 
 
     @GetMapping
-    public ResponseEntity<List<College>> getAllColleges() {
-        List<College> colleges = collegeService.getAllColleges();
-        return new ResponseEntity<>(colleges, HttpStatus.OK);
+    public ResponseEntity<List<CollegeDTO>> getAllColleges() {
+        List<CollegeDTO> colleges = collegeService.getAllColleges();
+        return ResponseEntity.ok(colleges);
     }
 
 
     @GetMapping("/{id}")
-    public ResponseEntity<College> getCollegeById(@PathVariable UUID id) {
-        College college = collegeService.getCollegeById(id);
-        return college != null ? new ResponseEntity<>(college, HttpStatus.OK)
-                : new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    public ResponseEntity<CollegeDTO> getCollegeById(@PathVariable UUID id) {
+        CollegeDTO college = collegeService.getCollegeById(id);
+        if (college == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(college);
     }
-
 
     @PostMapping
-    public ResponseEntity<College> createCollege(@RequestBody College college) {
-        College savedCollege = collegeService.saveCollege(college);
-        return new ResponseEntity<>(savedCollege, HttpStatus.CREATED);
+    public ResponseEntity<CollegeDTO> createCollege(@RequestBody College college) {
+        CollegeDTO savedCollege = collegeService.saveCollege(college);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedCollege);
     }
+
     @PutMapping("/{id}")
     public ResponseEntity<College> updateCollege(@PathVariable UUID id, @RequestBody College college) {
         College updatedCollege = collegeService.updateCollege(id, college);

@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class ProjectService {
@@ -38,6 +39,9 @@ public class ProjectService {
 public List<Project> getAllProjects(){
         return projectRepository.findByIsDeletedFalse();
 }
+
+
+
 
     public Optional<Project> getProjectById(UUID projectId){
         return projectRepository.findById(projectId)

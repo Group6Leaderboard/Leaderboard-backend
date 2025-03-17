@@ -1,6 +1,7 @@
 package com.leaderboard.demo.controller;
 
 import com.leaderboard.demo.dto.UserDto;
+import com.leaderboard.demo.dto.UserResponseDto;
 import com.leaderboard.demo.entity.User;
 import com.leaderboard.demo.service.UserService;
 
@@ -57,9 +58,16 @@ public class UserController {
                 : new ResponseEntity<>("User not found.", HttpStatus.NOT_FOUND);
     }
 
+//    @PutMapping("/{id}")
+//    public ResponseEntity<User> updateUser(@PathVariable UUID id, @RequestBody UserDto userDto) {
+//        User updatedUser = userService.updateUser(id, userDto);
+//        return ResponseEntity.ok(updatedUser);
+//    }
+
     @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable UUID id, @RequestBody UserDto userDto) {
-        User updatedUser = userService.updateUser(id, userDto);
+    public ResponseEntity<UserResponseDto> updateUser(@PathVariable UUID id, @RequestBody UserDto userDto) {
+        UserResponseDto updatedUser = userService.updateUser(id, userDto);
         return ResponseEntity.ok(updatedUser);
     }
+
 }
