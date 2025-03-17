@@ -54,4 +54,8 @@ public class ProjectDto {
     public void setCollegeId(UUID collegeId) {
         this.collegeId = collegeId;
     }
+
+    public void setId(UUID id) {
+        
+    }
 }

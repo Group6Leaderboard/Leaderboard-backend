@@ -13,12 +13,14 @@ import org.springframework.stereotype.Component;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 @Component
 public class JwtUtil {
 
     private Key secretKeyDecoded;
-    private static final long EXPIRATION_TIME = 86400000; // 1 day
+    private static final long EXPIRATION_TIME = 86400000;
 
     @Value("${jwt.secret}")
     private String secretKey;
@@ -43,7 +45,7 @@ public class JwtUtil {
         return Jwts.builder()
                 .setSubject(email)
                 .claim("role", role)
-                .claim("type", entityType) // Differentiates USER vs COLLEGE
+                .claim("type", entityType)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(secretKeyDecoded, SignatureAlgorithm.HS256)
@@ -68,5 +70,14 @@ public class JwtUtil {
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
+    }
+    private final Set<String> invalidatedTokens = new HashSet<>();
+
+    public void invalidateToken(String token) {
+        invalidatedTokens.add(token);
+    }
+
+    public boolean isTokenInvalid(String token) {
+        return invalidatedTokens.contains(token);
     }
 }
