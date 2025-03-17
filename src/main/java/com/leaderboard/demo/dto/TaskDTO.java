@@ -1,25 +1,24 @@
 package com.leaderboard.demo.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class TaskDTO {
     private UUID id;
-    private String description;
-    private String status;
-    private byte[] file;
     private String name;
-    private int score;
-    private UUID assignedBy;
-    private UUID assignedTO;
+    private String description;
+    private Integer score;
+    private LocalDateTime dueDate;
+    private String status;
     private boolean isDeleted;
+    private UUID assignedBy;
+    private UUID assignedTo;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private  byte[] file;
 
     public UUID getId() {
         return id;
@@ -27,30 +26,6 @@ public class TaskDTO {
 
     public void setId(UUID id) {
         this.id = id;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public byte[] getFile() {
-        return file;
-    }
-
-    public void setFile(byte[] file) {
-        this.file = file;
     }
 
     public String getName() {
@@ -61,12 +36,44 @@ public class TaskDTO {
         this.name = name;
     }
 
-    public int getScore() {
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Integer getScore() {
         return score;
     }
 
-    public void setScore(int score) {
+    public void setScore(Integer score) {
         this.score = score;
+    }
+
+    public LocalDateTime getDueDate() {
+        return dueDate;
+    }
+
+    public void setDueDate(LocalDateTime dueDate) {
+        this.dueDate = dueDate;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public boolean isDeleted() {
+        return isDeleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        isDeleted = deleted;
     }
 
     public UUID getAssignedBy() {
@@ -77,20 +84,12 @@ public class TaskDTO {
         this.assignedBy = assignedBy;
     }
 
-    public UUID getAssignedTO() {
-        return assignedTO;
+    public UUID getAssignedTo() {
+        return assignedTo;
     }
 
-    public void setAssignedTO(UUID assignedTO) {
-        this.assignedTO = assignedTO;
-    }
-
-    public boolean isDeleted() {
-        return isDeleted;
-    }
-
-    public void setDeleted(boolean deleted) {
-        isDeleted = deleted;
+    public void setAssignedTo(UUID assignedTo) {
+        this.assignedTo = assignedTo;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -108,4 +107,13 @@ public class TaskDTO {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
+
+    public byte[] getFile() {
+        return file;
+    }
+
+    public void setFile(byte[] file) {
+        this.file = file;
+    }
 }
+

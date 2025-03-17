@@ -1,12 +1,9 @@
 package com.leaderboard.demo.service;
 
-import com.leaderboard.demo.dto.UserDto;
+import com.leaderboard.demo.dto.*;
 import com.leaderboard.demo.entity.College;
 import com.leaderboard.demo.entity.Role;
 import com.leaderboard.demo.config.JwtUtil;
-import com.leaderboard.demo.dto.LoginRequest;
-import com.leaderboard.demo.dto.LoginResponse;
-import com.leaderboard.demo.dto.UserSignupDto;
 import com.leaderboard.demo.entity.College;
 import com.leaderboard.demo.entity.Role;
 
@@ -37,6 +34,9 @@ public class UserService {
     @Autowired
     private RoleRepository roleRepository;
 
+    @Autowired
+    PasswordEncoder passwordEncoder;
+
     public User AddUser(UserDto userDTO) {
         User user = new User();
         user.setEmail(userDTO.getEmail());
@@ -59,17 +59,51 @@ public class UserService {
         return userRepository.save(user);
 
     }
-    public User updateUser(UUID id, UserDto userDto) {
+//    public User updateUser(UUID id, UserDto userDto) {
+//        User user = userRepository.findById(id)
+//                .orElseThrow(() -> new RuntimeException("User not found"));
+//        user.setEmail(userDto.getEmail());
+//        user.setName(userDto.getName());
+//        user.setPassword(userDto.getPassword());
+//        user.setPhone(userDto.getPhone());
+//        user.setScore(userDto.getScore());
+//
+//        return userRepository.save(user);
+//    }
+
+    public UserResponseDto updateUser(UUID id, UserDto userDto) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        user.setEmail(userDto.getEmail());
-        user.setName(userDto.getName());
-        user.setPassword(userDto.getPassword());
-        user.setPhone(userDto.getPhone());
-        user.setScore(userDto.getScore());
 
-        return userRepository.save(user);
+        if (userDto.getEmail() != null) {
+            user.setEmail(userDto.getEmail());
+        }
+        if (userDto.getName() != null) {
+            user.setName(userDto.getName());
+        }
+        if (userDto.getPassword() != null) {
+            user.setPassword(passwordEncoder.encode(userDto.getPassword()));
+        }
+        if (userDto.getPhone() != null) {
+            user.setPhone(userDto.getPhone());
+        }
+        if (userDto.getScore() != 0) {
+            user.setScore(userDto.getScore());
+        }
+
+        User updatedUser = userRepository.save(user);
+
+
+        return new UserResponseDto(
+                updatedUser.getId(),
+                updatedUser.getName(),
+                updatedUser.getEmail(),
+                updatedUser.getPhone(),
+                updatedUser.getRole() != null ? updatedUser.getRole().getName() : null,
+                updatedUser.getCollege() != null ? updatedUser.getCollege().getId() : null
+        );
     }
+
     public User saveUser(User user) {
         return userRepository.save(user);
     }

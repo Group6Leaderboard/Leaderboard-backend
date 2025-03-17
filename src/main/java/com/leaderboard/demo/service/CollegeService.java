@@ -1,5 +1,6 @@
 package com.leaderboard.demo.service;
 
+import com.leaderboard.demo.dto.CollegeDTO;
 import com.leaderboard.demo.entity.College;
 import com.leaderboard.demo.entity.Task;
 import com.leaderboard.demo.repository.CollegeRepository;
@@ -31,20 +32,51 @@ public class CollegeService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public College saveCollege(College college) {
-
+    public CollegeDTO saveCollege(College college) {
         college.setPassword(passwordEncoder.encode(college.getPassword()));
-        return collegeRepository.save(college);
-    }
-    public College getCollegeById(UUID collegeId) {
+        College savedCollege = collegeRepository.save(college);
 
-        return collegeRepository.findById(collegeId).orElse(null);
+        CollegeDTO dto = new CollegeDTO();
+        dto.setId(college.getId());
+        dto.setName(savedCollege.getName());
+        dto.setLocation(savedCollege.getLocation());
+        dto.setAbout(savedCollege.getAbout());
+        dto.setEmail(savedCollege.getEmail());
+        dto.setRoleName(savedCollege.getRole() != null ? savedCollege.getRole().getName() : null);
+
+        return dto;
+    }
+    public CollegeDTO getCollegeById(UUID collegeId) {
+        College college = collegeRepository.findByIdAndIsDeletedFalse(collegeId).orElse(null);
+        if (college != null) {
+            CollegeDTO dto = new CollegeDTO();
+            dto.setId(college.getId());
+            dto.setName(college.getName());
+            dto.setLocation(college.getLocation());
+            dto.setAbout(college.getAbout());
+            dto.setEmail(college.getEmail());
+            dto.setRoleName(college.getRole() != null ? college.getRole().getName() : null);
+            return dto;
+        }
+        return null;
     }
 
-
-    public List<College> getAllColleges() {
-        return collegeRepository.findByIsDeletedFalse();
+    public List<CollegeDTO> getAllColleges() {
+        List<College> colleges = collegeRepository.findByIsDeletedFalse();
+        List<CollegeDTO> dtos = new ArrayList<>();
+        for (College college : colleges) {
+            CollegeDTO dto = new CollegeDTO();
+            dto.setId(college.getId());
+            dto.setName(college.getName());
+            dto.setLocation(college.getLocation());
+            dto.setAbout(college.getAbout());
+            dto.setEmail(college.getEmail());
+            dto.setRoleName(college.getRole() != null ? college.getRole().getName() : null);
+            dtos.add(dto);
+        }
+        return dtos;
     }
+
 
     public College updateCollege(UUID collegeId, College updatedCollege) {
         return collegeRepository.findById(collegeId).map(existingCollege -> {
