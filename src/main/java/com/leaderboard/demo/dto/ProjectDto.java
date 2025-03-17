@@ -15,6 +15,14 @@ public class ProjectDto {
     private UUID mentorId;
     private UUID collegeId;
 
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
     public String getName() {
         return name;
     }
@@ -55,7 +63,11 @@ public class ProjectDto {
         this.collegeId = collegeId;
     }
 
-    public void setId(UUID id) {
-        
-    }
 }
+
+
+
+
+
+
+

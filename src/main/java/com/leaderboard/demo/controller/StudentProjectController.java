@@ -4,6 +4,7 @@ import com.leaderboard.demo.dto.ApiResponse;
 import com.leaderboard.demo.dto.Studentproject;
 import com.leaderboard.demo.entity.StudentProject;
 import com.leaderboard.demo.service.StudentProjectService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,10 +19,10 @@ public class StudentProjectController {
 
     private final StudentProjectService studentProjectService;
 
+    @Autowired
     public StudentProjectController(StudentProjectService studentProjectService) {
         this.studentProjectService = studentProjectService;
     }
-
     @PostMapping("/students/{studentId}/projects/{projectId}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('COLLEGE')")
     public ResponseEntity<ApiResponse<Studentproject>> assignProjectToStudent(
@@ -29,7 +30,7 @@ public class StudentProjectController {
             @PathVariable UUID projectId) {
 
         ApiResponse<Studentproject> response = studentProjectService.assignProjectToStudent(studentId, projectId);
-        return ResponseEntity.status(response.getStatus()).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
 
@@ -49,7 +50,7 @@ public class StudentProjectController {
     @PreAuthorize("hasRole('ADMIN') or hasRole('COLLEGE')")
     public ResponseEntity<ApiResponse<String>> deleteStudentProject(@PathVariable UUID studentProjectId) {
         ApiResponse<String> response = studentProjectService.deleteStudentProject(studentProjectId);
-        return ResponseEntity.status(response.getStatus()).body(response);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(response);
     }
 
     @GetMapping

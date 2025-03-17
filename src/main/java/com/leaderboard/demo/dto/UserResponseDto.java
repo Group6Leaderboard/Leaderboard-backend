@@ -1,8 +1,12 @@
 package com.leaderboard.demo.dto;
 
-import java.util.UUID;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
+import java.util.UUID;
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserResponseDto implements BaseResponse{
+
+
     private UUID id;
     private String name;
     private String email;
@@ -21,7 +25,6 @@ public class UserResponseDto implements BaseResponse{
         this.role = role;
     }
 
-    // Getters and Setters
     public UUID getId() {
         return id;
     }

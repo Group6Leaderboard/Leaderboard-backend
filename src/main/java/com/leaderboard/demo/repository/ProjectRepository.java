@@ -13,8 +13,8 @@ import java.util.UUID;
 public interface ProjectRepository extends JpaRepository<Project, UUID> {
     List<Project> findByIsDeletedFalse();
     List<Project> findByMentorId(UUID mentorId);
+    Optional<Project> findByIdAndIsDeletedFalse(UUID id);
 
-    Optional<Project> findByIdAndIsDeletedFalse(UUID projectId);
     List<Project> findByMentorIdAndIsDeletedFalse(UUID mentorId);
 
     List<Project> findByCollegeIdAndIsDeletedFalse(UUID collegeId);

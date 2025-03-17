@@ -1,190 +1,85 @@
-//package com.leaderboard.demo.controller;
-//
-//import com.leaderboard.demo.entity.Task;
-//import com.leaderboard.demo.service.TaskService;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.http.HttpStatus;
-//import org.springframework.http.ResponseEntity;
-//import org.springframework.web.bind.annotation.*;
-//import org.springframework.web.multipart.MultipartFile;
-//
-//import java.util.List;
-//import java.util.UUID;
-//
-//@RestController
-//
-//@RequestMapping("/api/tasks")
-//
-//public class TaskController {
-//
-//    @Autowired
-//    private TaskService taskService;
-//
-//
-//    @GetMapping
-//    public ResponseEntity<List<Task>> getAllTasks() {
-//        List<Task> tasks = taskService.getAllTasks();
-//        return new ResponseEntity<>(tasks, HttpStatus.OK);
-//    }
-//
-//    @GetMapping("/{id}")
-//    public ResponseEntity<Task> getTaskById(@PathVariable UUID id) {
-//        Task task = taskService.getTaskById(id);
-//        return task != null ? new ResponseEntity<>(task, HttpStatus.OK)
-//                : new ResponseEntity<>(HttpStatus.NOT_FOUND);
-//    }
-//
-//
-////    @PostMapping
-////    public ResponseEntity<Task> createTask(@RequestBody Task task) {
-////        Task savedTask = taskService.saveTask(task);
-////        return new ResponseEntity<>(savedTask, HttpStatus.CREATED);
-////    }
-//
-//    @PostMapping(consumes = "multipart/form-data")
-//    public ResponseEntity<Task> createTask(
-//            @RequestParam("description") String description,
-//            @RequestParam("status") String status,
-//            @RequestParam("file") MultipartFile file,
-//            @RequestParam("name") String name,
-//            @RequestParam("score") int score,
-//            @RequestParam("assignedBy") UUID assignedById,
-//            @RequestParam("assignedTo") UUID assignedToId){
-//
-//
-//
-//     Task savedTask = taskService.saveTask(description, status,file,name,score,assignedById,assignedToId);
-//        return new ResponseEntity<>(savedTask, HttpStatus.CREATED);
-//    }
-//
-//
-////    @DeleteMapping("/{id}")
-////    public ResponseEntity<Task> deleteTask(@PathVariable UUID id) {
-////        Task deletedTask = taskService.deleteTask(id);
-////        return deletedTask != null ? new ResponseEntity<>(deletedTask, HttpStatus.OK)
-////                : new ResponseEntity<>(HttpStatus.NOT_FOUND);
-////    }
-//
-//    @DeleteMapping("/{id}")
-//    public ResponseEntity<Void> deleteTask(@PathVariable UUID id) {
-//        boolean deleted = taskService.deleteTask(id);
-//        return deleted ? new ResponseEntity<>(HttpStatus.NO_CONTENT)
-//                : new ResponseEntity<>(HttpStatus.NOT_FOUND);
-//    }
-//}
 package com.leaderboard.demo.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.leaderboard.demo.dto.ApiResponse;
 import com.leaderboard.demo.dto.TaskDTO;
-import com.leaderboard.demo.entity.Project;
-import com.leaderboard.demo.entity.Task;
+import com.leaderboard.demo.dto.TaskPostDTO;
+import com.leaderboard.demo.dto.TaskPutDTO;
 import com.leaderboard.demo.service.TaskService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.*;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/tasks")
 public class TaskController {
-    private final TaskService taskService;
+    @Autowired
+    private TaskService taskService;
 
-    public TaskController(TaskService taskService){
-        this.taskService=taskService;
-    }
-
-    @PostMapping
-    @PreAuthorize("hasRole('MENTOR')")
-    public ResponseEntity<TaskDTO> createTask(
-            @RequestPart("task") String taskJson,
-            @RequestPart(value = "file", required = false) MultipartFile file) throws IOException {
-
-        ObjectMapper objectMapper = new ObjectMapper();
-        TaskDTO taskDTO = objectMapper.readValue(taskJson, TaskDTO.class);
-
-        TaskDTO savedTask = taskService.saveTask(taskDTO, file);
-        return ResponseEntity.ok(savedTask);
-    }
-
-
-    @GetMapping
-    public ResponseEntity<List<TaskDTO>> getAllTasks() {
-        List<TaskDTO> tasks=taskService.getAllTasks();
-        return ResponseEntity.ok(tasks);
-    }
-
-
-
-
-
-    @GetMapping("/{id}")
-    public ResponseEntity<Object> getTaskById(@PathVariable UUID id){
-        Optional<TaskDTO> task=taskService.getTaskById(id);
-
-        if(task.isPresent()){
-            return ResponseEntity.ok(task.get());
-
-        }else {
-            Map<String ,String > response =new HashMap<>();
-            response.put("Status","200");
-            response.put("message","No such task");
-            return ResponseEntity.ok(response);
-
+    @PostMapping("/{mentorId}")
+    public ResponseEntity<ApiResponse<TaskDTO>> createTask(@RequestBody TaskPostDTO taskPostDTO, @PathVariable UUID mentorId) {
+        try {
+            TaskDTO taskDTO = taskService.createTask(taskPostDTO, mentorId);
+            return ApiResponse.created(taskDTO, "Task created successfully");
+        } catch (IllegalArgumentException e) {
+            return ApiResponse.badRequest(e.getMessage());
+        } catch (RuntimeException e) {
+            return ApiResponse.badRequest(e.getMessage());
         }
-    }
-
-    @PutMapping("/{id}/file")
-    @PreAuthorize("hasRole('STUDENT')")
-    public ResponseEntity<TaskDTO> updateTaskFile(
-            @PathVariable UUID id,
-            @RequestPart(value = "file", required = true) MultipartFile file) throws IOException {
-
-        TaskDTO updatedTask = taskService.updateTaskFile(id, file);
-        return updatedTask != null ? ResponseEntity.ok(updatedTask) : ResponseEntity.notFound().build();
-    }
-    @PutMapping("/{id}/score")
-    @PreAuthorize("hasRole('MENTOR')")
-    public ResponseEntity<TaskDTO> scoreTask(
-            @PathVariable UUID id,
-            @RequestBody int score) {
-
-        TaskDTO updatedTask = taskService.scoreTask(id, score);
-        return updatedTask != null ? ResponseEntity.ok(updatedTask) : ResponseEntity.notFound().build();
     }
 
 
 
     @PutMapping("/{id}")
-    public ResponseEntity<TaskDTO> updateTask(
-            @PathVariable UUID id,
-            @RequestPart("task") String taskJson,
-            @RequestPart(value = "file", required = false) MultipartFile file) throws IOException {
+    public ResponseEntity<ApiResponse<TaskDTO>> updateTask(@PathVariable UUID id,
+                                              @RequestParam(value = "dueDate", required = false) LocalDateTime dueDate,
+                                              @RequestParam(value = "score", required = false) Integer score,
+                                              @RequestParam(value = "file", required = false) MultipartFile file)
+            {
+                try {
+                    TaskPutDTO taskPutDTO = new TaskPutDTO();
+                    taskPutDTO.setDuedate(dueDate);
+                    taskPutDTO.setScore(score);
+                    taskPutDTO.setFile(file);
+                    TaskDTO taskDTO = taskService.updateTask(id, taskPutDTO);
+                    return ApiResponse.success(taskDTO, "Task updated successfully");
+                } catch (RuntimeException e) {
+                    return ApiResponse.badRequest(e.getMessage());
+                } catch (IOException e) {
+                    return ApiResponse.internalServerError("Internal server error");
+                }
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        TaskDTO taskDTO = objectMapper.readValue(taskJson, TaskDTO.class);
-
-        TaskDTO updatedTask = taskService.updateTask(id, taskDTO, file);
-        return updatedTask != null ? ResponseEntity.ok(updatedTask) : ResponseEntity.notFound().build();
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Object> deleteTask(@PathVariable UUID id) {
-        boolean deleted = taskService.softDeleteTask(id);
+    @GetMapping("/{id}")
 
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "200");
-
-        if (deleted) {
-            response.put("message", "Task deleted successfully");
-        } else {
-            response.put("message", "No such task");
+    public ResponseEntity<ApiResponse<TaskDTO>> getTaskById(@PathVariable UUID id) {
+        TaskDTO taskDTO = taskService.getTaskbyId(id);
+        if (taskDTO == null) {
+            return ApiResponse.notFound("Task not found");
         }
-
-        return ResponseEntity.ok(response);
+        return ApiResponse.success(taskDTO, "Task retrieved successfully");
     }
 
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<TaskDTO>>> getAllTasks() {
+        List<TaskDTO> tasks = taskService.getAllTasks();
+        return ApiResponse.success(tasks, "Tasks retrieved successfully");
+
+    }
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deletTask(@PathVariable UUID id){
+ try{
+     taskService.deletTask(id);
+     return ApiResponse.noContent("Task deleted Succesfully");
+ }catch (RuntimeException e){
+     return ApiResponse.badRequest(e.getMessage());
+ }
+    }
 }
