@@ -1,73 +1,61 @@
 package com.leaderboard.demo.controller;
 
+import com.leaderboard.demo.dto.ApiResponse;
+import com.leaderboard.demo.dto.BaseResponse;
 import com.leaderboard.demo.dto.UserDto;
 import com.leaderboard.demo.dto.UserResponseDto;
 import com.leaderboard.demo.entity.User;
 import com.leaderboard.demo.service.UserService;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+
+
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
-    
+
     @Autowired
     private UserService userService;
 
 
     @GetMapping
-    public ResponseEntity<List<User>> getAllUsers() {
-        List<User> users = userService.getAllUsers();
-        return new ResponseEntity<>(users, HttpStatus.OK);
+    public ResponseEntity<ApiResponse<List<UserResponseDto>>> getAllUsers() {
+        ApiResponse<List<UserResponseDto>> response = userService.getAllUsers();
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
-
 
     @GetMapping("/{id}")
-    public ResponseEntity<Object> getUserById(@PathVariable UUID id) {
-        Optional<User> user = userService.getUserById(id);
-
-        if (user.isPresent()) {
-            return new ResponseEntity<>(user.get(), HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>(Map.of("message", "No user found  "), HttpStatus.NOT_FOUND);
-        }
+    public ResponseEntity<ApiResponse<UserResponseDto>> getUserById(@PathVariable UUID id) {
+        ApiResponse<UserResponseDto> response = userService.getUserById(id);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
-
-
-    @PostMapping
-    public ResponseEntity<User> createUser(@RequestBody UserDto userDto) {
-        User savedUser = userService.AddUser(userDto);
-        return new ResponseEntity<>(savedUser, HttpStatus.CREATED);
-    }
-
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteUser(@PathVariable UUID id) {
-        boolean isDeleted = userService.deleteUser(id);
-        return isDeleted
-                ? new ResponseEntity<>("User deleted successfully.", HttpStatus.OK)
-                : new ResponseEntity<>("User not found.", HttpStatus.NOT_FOUND);
-    }
-
-//    @PutMapping("/{id}")
-//    public ResponseEntity<User> updateUser(@PathVariable UUID id, @RequestBody UserDto userDto) {
-//        User updatedUser = userService.updateUser(id, userDto);
-//        return ResponseEntity.ok(updatedUser);
-//    }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserResponseDto> updateUser(@PathVariable UUID id, @RequestBody UserDto userDto) {
-        UserResponseDto updatedUser = userService.updateUser(id, userDto);
-        return ResponseEntity.ok(updatedUser);
+    public ResponseEntity<ApiResponse<UserResponseDto>> updateUser(@PathVariable UUID id,
+                                                                   @RequestBody UserDto userDto) {
+        ApiResponse<UserResponseDto> response = userService.updateUser(id, userDto);
+        return ResponseEntity.status(response.getStatus()).body(response);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<String>> deleteUser(@PathVariable UUID id) {
+        ApiResponse<String> response = userService.deleteUser(id);
+        return ResponseEntity.status(response.getStatus()).body(response);
+    }
+
+
+    @GetMapping("/role/{roleName}")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('COLLEGE') and #roleName == 'STUDENT')")
+    public ResponseEntity<ApiResponse<List<BaseResponse>>> getUsersByRole(@PathVariable String roleName) {
+        ApiResponse<List<BaseResponse>> response = userService.getUsersByRole(roleName);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
 }

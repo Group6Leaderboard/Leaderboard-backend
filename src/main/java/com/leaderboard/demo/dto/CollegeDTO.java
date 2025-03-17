@@ -7,16 +7,25 @@ import lombok.NoArgsConstructor;
 import java.util.UUID;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class CollegeDTO {
+public class CollegeDTO implements BaseResponse{
     private UUID id;
     private String name;
     private String location;
     private String about;
     private String email;
     private String roleName;
+
+    public CollegeDTO(UUID id, String name, String email, String location, String about, String roleName) {
+        this.id = id;
+        this.name = name;
+        this.email = email;
+        this.location = location;
+        this.about = about;
+        this.roleName = roleName;
+    }
+
 
     public UUID getId() {
         return id;

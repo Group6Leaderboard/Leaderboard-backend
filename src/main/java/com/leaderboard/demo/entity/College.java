@@ -30,15 +30,20 @@ public class College {
     @ManyToOne
     @JoinColumn(name = "role_id", nullable = true)
     private Role role;
-    public College() {
-        this.role = new Role();
-        this.role.setId(UUID.fromString("9c239c0b-ce09-4902-8f08-e839599262e2"));
-    }
+
 
     private boolean isDeleted = false;
 
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt;
+    @PrePersist
+    public void setDefaultRole() {
+        if (this.role == null) {
+            this.role = new Role();
+            this.role.setId(UUID.fromString("9921539c-8a5d-4901-9e07-aca7c5f9c768"));
+        }
+    }
+
 
     public UUID getId() {
         return id;

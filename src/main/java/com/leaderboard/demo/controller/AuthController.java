@@ -34,7 +34,7 @@ public class AuthController {
 
 
     @PostMapping("/signup")
-    public ResponseEntity<ApiResponse<UserResponseDto>> signup(
+    public ResponseEntity<ApiResponse<BaseResponse>> signup(
             @RequestBody UserSignupDto signupDto,
             @RequestHeader("Authorization") String token) {
 
@@ -48,18 +48,19 @@ public class AuthController {
             String email = jwtUtil.extractUsername(jwt);
 
             User loggedInUser = userRepository.findByEmail(email).orElse(null);
-
             College loggedInCollege = collegeRepository.findByEmail(email).orElse(null);
 
+            ApiResponse<BaseResponse> response;
             if (loggedInUser != null) {
-                return authService.signupByUser(signupDto, loggedInUser);
+                response = authService.signupByUser(signupDto, loggedInUser);
             } else if (loggedInCollege != null) {
-
-                return authService.signupByCollege(signupDto, loggedInCollege);
+                response = authService.signupByCollege(signupDto, loggedInCollege);
             } else {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ApiResponse<>(401, "Invalid authentication", null));
             }
+
+            return ResponseEntity.status(response.getStatus()).body(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ApiResponse<>(400, "Failure: " + e.getMessage(), null));
@@ -68,10 +69,24 @@ public class AuthController {
 
 
 
-
-
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponse>> login(@RequestBody LoginRequest loginRequest) {
-        return authService.login(loginRequest);
+        ApiResponse<LoginResponse> response = authService.login(loginRequest);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<String>> logout(@RequestHeader("Authorization") String token) {
+        if (token == null || !token.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(400, "Invalid token format", null));
+        }
+
+        String jwt = token.substring(7);
+
+        jwtUtil.invalidateToken(jwt);
+
+        return ResponseEntity.ok(new ApiResponse<>(200, "Logout successful", null));
+    }
+
 }

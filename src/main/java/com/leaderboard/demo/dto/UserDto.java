@@ -1,7 +1,15 @@
 package com.leaderboard.demo.dto;
 
-import java.util.UUID;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.UUID;
+@AllArgsConstructor
+@NoArgsConstructor
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserDto {
     private UUID id;
     private String email;

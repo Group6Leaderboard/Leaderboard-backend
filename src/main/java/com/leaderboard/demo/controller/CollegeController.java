@@ -1,73 +1,46 @@
 package com.leaderboard.demo.controller;
-
+import com.leaderboard.demo.dto.ApiResponse;
 import com.leaderboard.demo.dto.CollegeDTO;
 import com.leaderboard.demo.entity.College;
 import com.leaderboard.demo.service.CollegeService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
+import java.util.List;
 
 @RestController
-
 @RequestMapping("/api/colleges")
 public class CollegeController {
 
     @Autowired
     private CollegeService collegeService;
 
-
     @GetMapping
-    public ResponseEntity<List<CollegeDTO>> getAllColleges() {
-        List<CollegeDTO> colleges = collegeService.getAllColleges();
-        return ResponseEntity.ok(colleges);
+    public ResponseEntity<ApiResponse<List<CollegeDTO>>> getAllColleges() {
+        ApiResponse<List<CollegeDTO>> response = collegeService.getAllColleges();
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
-
 
     @GetMapping("/{id}")
-    public ResponseEntity<CollegeDTO> getCollegeById(@PathVariable UUID id) {
-        CollegeDTO college = collegeService.getCollegeById(id);
-        if (college == null) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(college);
+    public ResponseEntity<ApiResponse<CollegeDTO>> getCollegeById(@PathVariable UUID id) {
+        ApiResponse<CollegeDTO> response = collegeService.getCollegeById(id);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
-    @PostMapping
-    public ResponseEntity<CollegeDTO> createCollege(@RequestBody College college) {
-        CollegeDTO savedCollege = collegeService.saveCollege(college);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedCollege);
-    }
 
     @PutMapping("/{id}")
-    public ResponseEntity<College> updateCollege(@PathVariable UUID id, @RequestBody College college) {
-        College updatedCollege = collegeService.updateCollege(id, college);
-        return updatedCollege != null ? new ResponseEntity<>(updatedCollege, HttpStatus.OK)
-                : new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    @PreAuthorize("hasRole('ADMIN') or hasRole('COLLEGE')")
+    public ResponseEntity<ApiResponse<CollegeDTO>> updateCollege(@PathVariable UUID id, @RequestBody College college) {
+        ApiResponse<CollegeDTO> response = collegeService.updateCollege(id, college);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
-
-
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Object> deleteCollege(@PathVariable UUID id) {
-        boolean deleted = collegeService.softDeleteCollege(id); // ✅ Use instance method correctly
-
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "200");
-
-        if (deleted) {
-            response.put("message", "College deleted successfully");
-        } else {
-            response.put("message", "No such college");
-        }
-
-        return ResponseEntity.ok(response);
+    public ResponseEntity<ApiResponse<String>> deleteCollege(@PathVariable UUID id) {
+        ApiResponse<String> response = collegeService.softDeleteCollege(id);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
-
-
 }

@@ -1,28 +1,24 @@
 package com.leaderboard.demo.service;
-
 import com.leaderboard.demo.dto.*;
 import com.leaderboard.demo.entity.College;
 import com.leaderboard.demo.entity.Role;
-import com.leaderboard.demo.config.JwtUtil;
-import com.leaderboard.demo.entity.College;
-import com.leaderboard.demo.entity.Role;
-
 import com.leaderboard.demo.entity.User;
+import com.leaderboard.demo.exception.ResourceNotFoundException;
 import com.leaderboard.demo.repository.CollegeRepository;
 import com.leaderboard.demo.repository.RoleRepository;
 import com.leaderboard.demo.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -33,111 +29,193 @@ public class UserService {
     private CollegeRepository collegeRepository;
     @Autowired
     private RoleRepository roleRepository;
-
     @Autowired
-    PasswordEncoder passwordEncoder;
+    private PasswordEncoder passwordEncoder;
 
-    public User AddUser(UserDto userDTO) {
-        User user = new User();
-        user.setEmail(userDTO.getEmail());
-        user.setName(userDTO.getName());
-        user.setPassword(userDTO.getPassword());
-        user.setPhone(userDTO.getPhone());
-        user.setScore(userDTO.getScore());
-
-        Role role = roleRepository.findById(userDTO.getRole_id())
-                .orElseThrow(() -> new RuntimeException("Role not found"));
-        user.setRole(role);
-
-        if (userDTO.getCollege_id() != null) {
-            College college = collegeRepository.findById(userDTO.getCollege_id())
-                    .orElseThrow(() -> new RuntimeException("college not found"));
-            user.setCollege(college);
-        } else {
-            user.setCollege(null);
-        }
-        return userRepository.save(user);
-
+    private boolean hasRole(String role) {
+        return SecurityContextHolder.getContext().getAuthentication()
+                .getAuthorities()
+                .stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_" + role));
     }
-//    public User updateUser(UUID id, UserDto userDto) {
-//        User user = userRepository.findById(id)
-//                .orElseThrow(() -> new RuntimeException("User not found"));
-//        user.setEmail(userDto.getEmail());
-//        user.setName(userDto.getName());
-//        user.setPassword(userDto.getPassword());
-//        user.setPhone(userDto.getPhone());
-//        user.setScore(userDto.getScore());
-//
-//        return userRepository.save(user);
-//    }
 
-    public UserResponseDto updateUser(UUID id, UserDto userDto) {
+
+    @Transactional
+    public ApiResponse<UserResponseDto> updateUser(UUID id, UserDto userDto) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        String loggedInUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        if (!user.getEmail().equals(loggedInUserEmail) &&
+                !SecurityContextHolder.getContext().getAuthentication().getAuthorities()
+                        .contains(new SimpleGrantedAuthority("ROLE_ADMIN"))) {
+            throw new IllegalArgumentException("You are not authorized to update this user");
+        }
 
         if (userDto.getEmail() != null) {
-            user.setEmail(userDto.getEmail());
+            throw new IllegalArgumentException("Email cannot be updated");
         }
-        if (userDto.getName() != null) {
-            user.setName(userDto.getName());
-        }
+
         if (userDto.getPassword() != null) {
             user.setPassword(passwordEncoder.encode(userDto.getPassword()));
         }
         if (userDto.getPhone() != null) {
             user.setPhone(userDto.getPhone());
         }
-        if (userDto.getScore() != 0) {
-            user.setScore(userDto.getScore());
-        }
+
+        user.setUpdatedAt(LocalDateTime.now());
 
         User updatedUser = userRepository.save(user);
+        UserResponseDto dto = mapToDto(updatedUser);
+
+        return new ApiResponse<>(200, "User updated successfully", dto);
+    }
+
+    public ApiResponse<UserResponseDto> getUserById(UUID userId) {
+        User user = userRepository.findByIdAndIsDeletedFalse(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        UserResponseDto dto = mapToDto(user);
+        return new ApiResponse<>(200, "Success", dto);
+    }
+
+    public ApiResponse<List<BaseResponse>> getUsersByRole(String roleName) {
+        List<BaseResponse> responses;
+
+        if ("COLLEGE".equalsIgnoreCase(roleName)) {
+            if (!hasRole("ADMIN")) {
+                throw new IllegalArgumentException("Unauthorized to access college details");
+            }
+
+            List<College> colleges = collegeRepository.findByIsDeletedFalse();
+
+            if (colleges.isEmpty()) {
+                return new ApiResponse<>(404, "No colleges found", null);
+            }
+
+            responses = colleges.stream()
+                    .map(college -> new CollegeDTO(
+                            college.getId(),
+                            college.getName(),
+                            college.getEmail(),
+                            college.getLocation(),
+                            college.getAbout(),
+                            college.getRole() != null ? college.getRole().getName() : null
+                    ))
+                    .collect(Collectors.toList());
+
+        } else if ("STUDENT".equalsIgnoreCase(roleName)) {
+            if (hasRole("COLLEGE")) {
+                String email = SecurityContextHolder.getContext().getAuthentication().getName();
+                College loggedInCollege = collegeRepository.findByEmailAndIsDeletedFalse(email)
+                        .orElseThrow(() -> new IllegalArgumentException("Logged-in college not found"));
+
+                List<User> students = userRepository.findByRoleNameAndCollegeIdAndIsDeletedFalse(roleName, loggedInCollege.getId());
+
+                if (students.isEmpty()) {
+                    return new ApiResponse<>(404, "No students found for logged-in college", null);
+                }
+
+                responses = students.stream()
+                        .map(user -> new UserResponseDto(
+                                user.getId(),
+                                user.getName(),
+                                user.getEmail(),
+                                user.getPhone(),
+                                user.getScore(),
+                                user.getCollege() != null ? user.getCollege().getId() : null,
+                                user.getRole().getName()
+                        ))
+                        .collect(Collectors.toList());
+            } else if (hasRole("ADMIN")) {
+                // Admin can fetch all students
+                List<User> users = userRepository.findByRoleNameAndIsDeletedFalse(roleName);
+
+                if (users.isEmpty()) {
+                    return new ApiResponse<>(404, "No users found for role: " + roleName, null);
+                }
+
+                responses = users.stream()
+                        .map(user -> new UserResponseDto(
+                                user.getId(),
+                                user.getName(),
+                                user.getEmail(),
+                                user.getPhone(),
+                                user.getScore(),
+                                user.getCollege() != null ? user.getCollege().getId() : null,
+                                user.getRole().getName()
+                        ))
+                        .collect(Collectors.toList());
+            } else {
+                throw new IllegalArgumentException("Unauthorized to access student details");
+            }
+        } else {
+            // Admin can fetch other user roles (like MENTOR)
+            if (!hasRole("ADMIN")) {
+                throw new IllegalArgumentException("Unauthorized to access " + roleName + " details");
+            }
+
+            List<User> users = userRepository.findByRoleNameAndIsDeletedFalse(roleName);
+
+            if (users.isEmpty()) {
+                return new ApiResponse<>(404, "No users found for role: " + roleName, null);
+            }
+
+            responses = users.stream()
+                    .map(user -> new UserResponseDto(
+                            user.getId(),
+                            user.getName(),
+                            user.getEmail(),
+                            user.getPhone(),
+                            user.getScore(),
+                            user.getCollege() != null ? user.getCollege().getId() : null,
+                            user.getRole().getName()
+                    ))
+                    .collect(Collectors.toList());
+        }
+
+        return new ApiResponse<>(200, "Success", responses);
+    }
 
 
+
+
+    public ApiResponse<List<UserResponseDto>> getAllUsers() {
+        List<User> users = userRepository.findByIsDeletedFalse();
+
+        List<UserResponseDto> userDtos = users.stream()
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+
+        return new ApiResponse<>(200, "Success", userDtos);
+    }
+
+    public ApiResponse<String> deleteUser(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (user.isDeleted()) {
+            throw new IllegalStateException("User already deleted");
+        }
+
+        user.setDeleted(true);
+        user.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(user);
+
+        return new ApiResponse<>(200, "User deleted successfully", "Deleted");
+    }
+
+    private UserResponseDto mapToDto(User user) {
         return new UserResponseDto(
-                updatedUser.getId(),
-                updatedUser.getName(),
-                updatedUser.getEmail(),
-                updatedUser.getPhone(),
-                updatedUser.getRole() != null ? updatedUser.getRole().getName() : null,
-                updatedUser.getCollege() != null ? updatedUser.getCollege().getId() : null
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getPhone(),
+                user.getScore(),
+                user.getCollege() != null ? user.getCollege().getId() : null, // ✅ Handle null college case
+                user.getRole().getName() // ✅ Get role name, not ID
         );
     }
 
-    public User saveUser(User user) {
-        return userRepository.save(user);
-    }
-
-
-    public Optional<User> getUserById(UUID userId) {
-        return userRepository.findById(userId)
-        .filter(user ->!user.isDeleted());
-    }
-
-
-    public List<User> getUsersByRole(String roleName) {
-        return userRepository.findByRoleName(roleName);
-    }
-
-
-    public List<User> getAllUsers() {
-        return userRepository.findByIsDeletedFalse();
-    }
-
-
-    public boolean deleteUser(UUID userId) {
-        Optional<User> user = userRepository.findById(userId);
-        if (user.isPresent()) {
-            User u = user.get();
-            u.setDeleted(true);
-            userRepository.save(u);
-            return true;
-        }
-        return false;
-    }
-
-
-    public Optional<User> getUserByEmail(String email) {
-        return userRepository.findByEmail(email);
-    }
 }

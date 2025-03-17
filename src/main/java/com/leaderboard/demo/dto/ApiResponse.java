@@ -13,7 +13,7 @@ public class ApiResponse<T> {
     private int status;
     private String message;
     private T response;
-    // Helper methods to create ResponseEntity with ApiResponse
+
     public static <T> ResponseEntity<ApiResponse<T>> success(T response, String message) {
         return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), message, response));
     }

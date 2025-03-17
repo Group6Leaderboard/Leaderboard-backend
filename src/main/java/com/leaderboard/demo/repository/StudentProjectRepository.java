@@ -17,4 +17,7 @@ public interface StudentProjectRepository extends JpaRepository<StudentProject, 
     Optional<StudentProject> findByIdAndIsDeletedFalse(UUID id);
     Optional<StudentProject> findByStudentAndProjectAndIsDeletedFalse(User student, Project project);
     List<StudentProject> findByIsDeletedFalse();
+
+    boolean existsByStudentAndProjectAndIsDeletedFalse(User student, Project project);
+
 }

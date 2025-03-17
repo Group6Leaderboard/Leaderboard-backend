@@ -5,6 +5,7 @@ import com.leaderboard.demo.dto.*;
 import com.leaderboard.demo.entity.College;
 import com.leaderboard.demo.entity.Role;
 import com.leaderboard.demo.entity.User;
+import com.leaderboard.demo.exception.ResourceNotFoundException;
 import com.leaderboard.demo.repository.CollegeRepository;
 import com.leaderboard.demo.repository.RoleRepository;
 import com.leaderboard.demo.repository.UserRepository;
@@ -15,6 +16,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -42,40 +44,63 @@ public class AuthService {
         this.jwtUtil = jwtUtil;
         this.collegeRepository = collegeRepository;
     }
-    public ResponseEntity<ApiResponse<UserResponseDto>> signupByUser(UserSignupDto userSignupDto, User loggedInUser) {
-        try {
-            boolean isAdmin = loggedInUser.getRole().getName().equalsIgnoreCase("ADMIN");
 
-            if (!isAdmin) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(new ApiResponse<>(403, "Unauthorized: Only Admin can register users", null));
+    public ApiResponse<BaseResponse> signupByUser(UserSignupDto userSignupDto, User loggedInUser) {
+        boolean isAdmin = loggedInUser.getRole().getName().equalsIgnoreCase("ADMIN");
+
+        if (!isAdmin) {
+            throw new IllegalArgumentException("Unauthorized: Only Admin can register users");
+        }
+
+        if (userRepository.existsByEmail(userSignupDto.getEmail()) ||
+                collegeRepository.existsByEmail(userSignupDto.getEmail())) {
+            throw new IllegalArgumentException("User already exists");
+        }
+
+        Role assignedRole = roleRepository.findByName(userSignupDto.getRole().toUpperCase())
+                .orElseThrow(() -> new ResourceNotFoundException("Invalid role"));
+
+        BaseResponse responseDto;
+
+        if (assignedRole.getName().equalsIgnoreCase("COLLEGE")) {
+            College existingCollege = collegeRepository.findByEmail(userSignupDto.getEmail()).orElse(null);
+            if (existingCollege != null) {
+                throw new IllegalArgumentException("College already exists with this email");
             }
 
-            if (userRepository.existsByEmail(userSignupDto.getEmail())) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new ApiResponse<>(400, "User already exists", null));
-            }
+            College college = new College();
+            college.setPassword(passwordEncoder.encode(
+                    userSignupDto.getPassword() != null ? userSignupDto.getPassword() : "Welcome@123"));
+            college.setName(userSignupDto.getName());
+            college.setEmail(userSignupDto.getEmail());
+            college.setRole(assignedRole);
+            college.setCreatedAt(LocalDateTime.now());
 
-            Role assignedRole = roleRepository.findByName(userSignupDto.getRole().toUpperCase())
-                    .orElse(null);
+            College savedCollege = collegeRepository.save(college);
 
-            if (assignedRole == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new ApiResponse<>(400, "Invalid role", null));
-            }
-
+            responseDto = new CollegeDTO(
+                    savedCollege.getId(),
+                    savedCollege.getName(),
+                    savedCollege.getEmail(),
+                    savedCollege.getLocation(),
+                    savedCollege.getAbout(),
+                    savedCollege.getRole() != null ? savedCollege.getRole().getName() : null
+            );
+        } else {
             College college = null;
             if (userSignupDto.getCollegeId() != null) {
-                college = collegeRepository.findById(userSignupDto.getCollegeId()).orElse(null);
-                if (college == null) {
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                            .body(new ApiResponse<>(400, "College not found", null));
-                }
+                college = collegeRepository.findById(userSignupDto.getCollegeId())
+                        .orElseThrow(() -> new ResourceNotFoundException("College not found"));
+            }
+
+            User existingUser = userRepository.findByEmail(userSignupDto.getEmail()).orElse(null);
+            if (existingUser != null) {
+                throw new IllegalArgumentException("User already exists with this email");
             }
 
             User user = new User();
-            user.setPassword(passwordEncoder.encode(userSignupDto.getPassword() != null ?
-                    userSignupDto.getPassword() : "Welcome@123"));
+            user.setPassword(passwordEncoder.encode(
+                    userSignupDto.getPassword() != null ? userSignupDto.getPassword() : "Welcome@123"));
             user.setName(userSignupDto.getName());
             user.setEmail(userSignupDto.getEmail());
             user.setPhone(userSignupDto.getPhone());
@@ -84,105 +109,89 @@ public class AuthService {
 
             User savedUser = userRepository.save(user);
 
-            UserResponseDto responseDto = new UserResponseDto(
+            responseDto = new UserResponseDto(
                     savedUser.getId(),
                     savedUser.getName(),
                     savedUser.getEmail(),
                     savedUser.getPhone(),
-                    savedUser.getRole().getName(),
-                    savedUser.getCollege() != null ? savedUser.getCollege().getId() : null
+                    savedUser.getScore(),
+                    savedUser.getCollege() != null ? savedUser.getCollege().getId() : null,
+                    savedUser.getRole().getName()
             );
 
-            return ResponseEntity.ok(new ApiResponse<>(200, "User registered successfully", responseDto));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>(500, "An error occurred during registration: " + e.getMessage(), null));
+
         }
+
+        return new ApiResponse<>(201, "Success", responseDto);
     }
 
-    public ResponseEntity<ApiResponse<UserResponseDto>> signupByCollege(UserSignupDto userSignupDto, College loggedInCollege) {
-        try {
-            if (userRepository.existsByEmail(userSignupDto.getEmail())) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new ApiResponse<>(400, "User already exists", null));
-            }
-
-            Role studentRole = roleRepository.findByName("STUDENT").orElse(null);
-
-            if (studentRole == null) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(new ApiResponse<>(500, "Default student role not found", null));
-            }
-
-            User user = new User();
-            user.setPassword(passwordEncoder.encode(userSignupDto.getPassword() != null ?
-                    userSignupDto.getPassword() : "Welcome@123"));
-            user.setName(userSignupDto.getName());
-            user.setEmail(userSignupDto.getEmail());
-            user.setPhone(userSignupDto.getPhone());
-            user.setRole(studentRole);
-            user.setCollege(loggedInCollege);
-
-            User savedUser = userRepository.save(user);
-
-            UserResponseDto responseDto = new UserResponseDto(
-                    savedUser.getId(),
-                    savedUser.getName(),
-                    savedUser.getEmail(),
-                    savedUser.getPhone(),
-                    savedUser.getRole().getName(),
-                    savedUser.getCollege().getId()
-            );
-
-            return ResponseEntity.ok(new ApiResponse<>(200, "Student registered successfully", responseDto));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>(500, "An error occurred during registration: " + e.getMessage(), null));
+    public ApiResponse<BaseResponse> signupByCollege(UserSignupDto userSignupDto, College loggedInCollege) {
+        if (userRepository.existsByEmail(userSignupDto.getEmail())) {
+            throw new IllegalArgumentException("User already exists");
         }
+
+        Role studentRole = roleRepository.findByName("STUDENT")
+                .orElseThrow(() -> new ResourceNotFoundException("Default student role not found"));
+
+        User user = new User();
+        user.setPassword(passwordEncoder.encode(
+                userSignupDto.getPassword() != null ? userSignupDto.getPassword() : "Welcome@123"));
+        user.setName(userSignupDto.getName());
+        user.setEmail(userSignupDto.getEmail());
+        user.setPhone(userSignupDto.getPhone());
+        user.setRole(studentRole);
+        user.setCollege(loggedInCollege);
+
+        User savedUser = userRepository.save(user);
+
+        BaseResponse responseDto = new UserResponseDto(
+                savedUser.getId(),
+                savedUser.getName(),
+                savedUser.getEmail(),
+                savedUser.getPhone(),
+                savedUser.getScore(),
+                savedUser.getCollege() != null ? savedUser.getCollege().getId() : null,
+                savedUser.getRole().getName()
+
+
+
+        );
+
+        return new ApiResponse<>(201, "Success", responseDto);
     }
 
 
 
-    public ResponseEntity<ApiResponse<LoginResponse>> login(LoginRequest loginRequest) {
-        try {
-            User user = userRepository.findByEmail(loginRequest.getEmail()).orElse(null);
-            College college = null;
-            if (user == null) {
-                college = collegeRepository.findByEmail(loginRequest.getEmail()).orElse(null);
-            }
-
-            if ((user == null && college == null) ||
-                    (user != null && !passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) ||
-                    (college != null && !passwordEncoder.matches(loginRequest.getPassword(), college.getPassword()))) {
-
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new ApiResponse<>(401, "Invalid credentials", null));
-            }
-
-            String token;
-            String role;
-
-            if (user != null) {
-                token = jwtUtil.generateToken(user);
-                role = user.getRole().getName();
-            } else {
-                token = jwtUtil.generateToken(college);
-                role = "COLLEGE";
-            }
-
-            LoginResponse loginResponse = new LoginResponse();
-            loginResponse.setToken(token);
-            loginResponse.setRole(role);
-
-            return ResponseEntity.ok(new ApiResponse<>(200, "Login successful", loginResponse));
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>(500, "An error occurred during login", null));
+    public ApiResponse<LoginResponse> login(LoginRequest loginRequest) {
+        User user = userRepository.findByEmail(loginRequest.getEmail()).orElse(null);
+        College college = null;
+        if (user == null) {
+            college = collegeRepository.findByEmail(loginRequest.getEmail()).orElse(null);
         }
+
+        if ((user == null && college == null) ||
+                (user != null && !passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) ||
+                (college != null && !passwordEncoder.matches(loginRequest.getPassword(), college.getPassword()))) {
+            throw new IllegalArgumentException("Invalid credentials");
+        }
+
+        String token;
+        String role;
+
+        if (user != null) {
+            token = jwtUtil.generateToken(user);
+            role = user.getRole().getName();
+        } else {
+            token = jwtUtil.generateToken(college);
+            role = "COLLEGE";
+        }
+
+        LoginResponse loginResponse = new LoginResponse();
+        loginResponse.setToken(token);
+        loginResponse.setRole(role);
+
+        return new ApiResponse<>(200, "Success", loginResponse);
     }
-
-
 
 
 }

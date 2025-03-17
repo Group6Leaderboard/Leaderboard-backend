@@ -18,6 +18,12 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     List<User> findByCollegeId(UUID collegeId);
     Optional<User> findByIdAndIsDeletedFalse(UUID id);
 
+    @Query("SELECT u FROM User u WHERE u.role.name = :roleName AND u.isDeleted = false")
+    List<User> findByRoleNameAndIsDeletedFalse(@Param("roleName") String roleName);
+
+    @Query("SELECT u FROM User u WHERE u.role.name = :roleName AND u.college.id = :collegeId AND u.isDeleted = false")
+    List<User> findByRoleNameAndCollegeIdAndIsDeletedFalse(@Param("roleName") String roleName, @Param("collegeId") UUID collegeId);
 
 
+    Optional<User> findByEmailAndIsDeletedFalse(String Email);
 }
