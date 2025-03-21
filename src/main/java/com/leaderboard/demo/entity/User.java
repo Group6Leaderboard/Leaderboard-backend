@@ -33,6 +33,10 @@ public class User {
     @JoinColumn(name = "college_id",referencedColumnName = "id", nullable = true)
     private College college;
 
+    @Lob
+    @Column(columnDefinition = "bytea")
+    private byte[] image;
+
     private boolean isDeleted = false;
 
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -124,5 +128,13 @@ public class User {
 
     public void setRole(Role role) {
         this.role = role;
+    }
+
+    public byte[] getImage() {
+        return image;
+    }
+
+    public void setImage(byte[] image) {
+        this.image = image;
     }
 }

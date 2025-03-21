@@ -19,6 +19,7 @@ public class UserDto {
     private int score;
     private UUID college_id;
     private UUID role_id;
+    private byte[] image;
 
     public UUID getId() {
         return id;
@@ -82,5 +83,13 @@ public class UserDto {
 
     public void setRole_id(UUID role_id) {
         this.role_id = role_id;
+    }
+
+    public byte[] getImage() {
+        return image;
+    }
+
+    public void setImage(byte[] image) {
+        this.image = image;
     }
 }
