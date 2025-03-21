@@ -41,17 +41,10 @@ public class UserService {
 
 
     @Transactional
-    public ApiResponse<UserResponseDto> updateUser(UUID id, UserDto userDto) {
-        User user = userRepository.findById(id)
+    public ApiResponse<UserResponseDto> updateUser(String loggedInUserEmail, UserDto userDto) {
+        User user = userRepository.findByEmailAndIsDeletedFalse(loggedInUserEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        String loggedInUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        if (!user.getEmail().equals(loggedInUserEmail) &&
-                !SecurityContextHolder.getContext().getAuthentication().getAuthorities()
-                        .contains(new SimpleGrantedAuthority("ROLE_ADMIN"))) {
-            throw new IllegalArgumentException("You are not authorized to update this user");
-        }
 
         if (userDto.getEmail() != null) {
             throw new IllegalArgumentException("Email cannot be updated");
@@ -129,7 +122,6 @@ public class UserService {
                         ))
                         .collect(Collectors.toList());
             } else if (hasRole("ADMIN")) {
-                // Admin can fetch all students
                 List<User> users = userRepository.findByRoleNameAndIsDeletedFalse(roleName);
 
                 if (users.isEmpty()) {
@@ -151,7 +143,6 @@ public class UserService {
                 throw new IllegalArgumentException("Unauthorized to access student details");
             }
         } else {
-            // Admin can fetch other user roles (like MENTOR)
             if (!hasRole("ADMIN")) {
                 throw new IllegalArgumentException("Unauthorized to access " + roleName + " details");
             }
@@ -192,7 +183,7 @@ public class UserService {
     }
 
     public ApiResponse<String> deleteUser(UUID userId) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (user.isDeleted()) {
@@ -213,8 +204,8 @@ public class UserService {
                 user.getEmail(),
                 user.getPhone(),
                 user.getScore(),
-                user.getCollege() != null ? user.getCollege().getId() : null, // ✅ Handle null college case
-                user.getRole().getName() // ✅ Get role name, not ID
+                user.getCollege() != null ? user.getCollege().getId() : null,
+                user.getRole().getName()
         );
     }
 

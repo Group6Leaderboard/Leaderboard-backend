@@ -9,6 +9,7 @@ import com.leaderboard.demo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -37,12 +38,16 @@ public class UserController {
     }
 
 
-    @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<UserResponseDto>> updateUser(@PathVariable UUID id,
-                                                                   @RequestBody UserDto userDto) {
-        ApiResponse<UserResponseDto> response = userService.updateUser(id, userDto);
+    @PutMapping()
+    @PreAuthorize("hasRole('ADMIN') or hasRole('STUDENT') or hasRole('MENTOR')")
+    public ResponseEntity<ApiResponse<UserResponseDto>> updateUser(@RequestBody UserDto userDto) {
+        String loggedInUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        ApiResponse<UserResponseDto> response = userService.updateUser(loggedInUserEmail, userDto);
+
         return ResponseEntity.status(response.getStatus()).body(response);
     }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<String>> deleteUser(@PathVariable UUID id) {
