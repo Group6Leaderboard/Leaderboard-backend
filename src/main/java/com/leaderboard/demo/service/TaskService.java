@@ -32,18 +32,27 @@ public class TaskService {
 
     @Autowired
     private UserRepository userRepository;
-    @Transactional
-    public TaskDTO createTask(TaskPostDTO taskPostDTO, UUID assignedBy) {
-        Project project = projectRepository.findByIdAndIsDeletedFalse(taskPostDTO.getAssignedTo())
-                .orElseThrow(() -> new RuntimeException("Project not found or deleted"));
 
-        User mentor = userRepository.findByIdAndIsDeletedFalse(assignedBy)
-                .orElseThrow(() -> new RuntimeException("Mentor not found"));
+
+
+    @Transactional
+    public TaskDTO createTask(TaskPostDTO taskPostDTO,UUID assignedBy){
+        Project project=projectRepository.findByIdAndIsDeletedFalse(taskPostDTO.getAssignedTo())
+                .orElseThrow(()->new RuntimeException("project not found or deleted"));
+        User mentor=userRepository.findByIdAndIsDeletedFalse(assignedBy)
+                .orElseThrow(()->new RuntimeException("mentor not found"));
 
         if (!project.getMentor().getId().equals(mentor.getId())) {
             throw new IllegalArgumentException("Mentor is not assigned to the project.");
         }
 
+
+        if(taskRepository.existsByNameAndAssignedToIdAndIsDeletedFalse(taskPostDTO.getName(),taskPostDTO.getAssignedTo())){
+            throw new IllegalArgumentException("Task name already exists in the project.");
+        }
+        if (taskPostDTO.getDueDate() != null && taskPostDTO.getDueDate().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Due date cannot be in the past.");
+        }
         Task task = new Task();
         task.setName(taskPostDTO.getName());
         task.setDescription(taskPostDTO.getDescription());
@@ -56,91 +65,106 @@ public class TaskService {
         return convertToDTO(task);
     }
 
-    @Transactional
-    public TaskDTO updateTask(UUID id, TaskPutDTO taskPutDTO) throws IOException {
-        Task task = taskRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new RuntimeException("Task not found or deleted"));
+        @Transactional
+        public TaskDTO updateTask(UUID id, TaskPutDTO taskPutDTO) throws IOException {
+            Task task = taskRepository.findByIdAndIsDeletedFalse(id)
+                    .orElseThrow(() -> new RuntimeException("Task not found or deleted"));
 
-        String loggedInUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        User loggedInUser = userRepository.findByEmailAndIsDeletedFalse(loggedInUserEmail)
-                .orElseThrow(() -> new RuntimeException("Logged in user not found"));
+            String loggedInUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+            User loggedInUser = userRepository.findByEmailAndIsDeletedFalse(loggedInUserEmail)
+                    .orElseThrow(() -> new RuntimeException("Logged-in user not found"));
 
-        LocalDateTime now = LocalDateTime.now();
+            LocalDateTime now = LocalDateTime.now();
 
-        if (task.getDueDate() != null && now.isAfter(task.getDueDate()) && task.getStatus().equals("Not Submitted")) {
-            task.setStatus("Overdue");
-            taskRepository.save(task);
+            if (task.getDueDate() != null && now.isAfter(task.getDueDate()) && task.getStatus().equals("Not Submitted")) {
+                task.setStatus("Overdue");
+                taskRepository.save(task);
 
-            if (taskPutDTO.getFile() != null && !taskPutDTO.getFile().isEmpty()) {
-                throw new RuntimeException("Task is overdue and cannot be submitted.");
-            }
-        }
-
-        if ("MENTOR".equals(loggedInUser.getRole().getName())) {
-            if (!task.getAssignedBy().getId().equals(loggedInUser.getId())) {
-                throw new IllegalArgumentException("Mentor is not assigned to this project.");
-            }
-
-            if (taskPutDTO.getDuedate() != null) {
-                task.setDueDate(taskPutDTO.getDuedate());
-            }
-
-            if (taskPutDTO.getScore() != null) {
-                if (task.getFile() != null) {
-                    task.setScore(taskPutDTO.getScore());
-                    task.setStatus("Completed");
-                    Project project = task.getAssignedTo();
-                    int totalProjectScore = taskRepository.sumScoresByProjectId(project.getId());
-                    project.setScore(totalProjectScore);
-                    projectRepository.save(project);
-
-                    List<StudentProject> studentProjects = studentProjectRepository.findByProjectIdAndIsDeletedFalse(project.getId());
-                    for (StudentProject sp : studentProjects) {
-                        int totalStudentScore = studentProjectRepository.sumScoresByStudentId(sp.getStudent().getId());
-                        sp.getStudent().setScore(totalStudentScore);
-                        userRepository.save(sp.getStudent());
-                    }
-
-                    College college = project.getCollege();
-                    int totalCollegeScore = projectRepository.sumScoresByCollegeId(college.getId());
-                    college.setScore(totalCollegeScore);
-                    collegeRepository.save(college);
-                }
-            }
-        }
-
-        else if ("STUDENT".equals(loggedInUser.getRole().getName())) {
-            boolean isStudentAssigned = studentProjectRepository.existsByStudentIdAndProjectIdAndIsDeletedFalse(
-                    loggedInUser.getId(),
-                    task.getAssignedTo().getId()
-            );
-
-            if (!isStudentAssigned) {
-                throw new IllegalArgumentException("Student is not assigned to this task.");
-            }
-
-            if (taskPutDTO.getFile() != null && !taskPutDTO.getFile().isEmpty()) {
-                if (task.getDueDate() != null && now.isAfter(task.getDueDate())) {
+                if (taskPutDTO.getFile() != null && !taskPutDTO.getFile().isEmpty()) {
                     throw new RuntimeException("Task is overdue and cannot be submitted.");
                 }
-                task.setFile(taskPutDTO.getFile().getBytes());
-                task.setStatus("To be reviewed");
             }
-            else{
-                throw new IllegalArgumentException("Include file");
+
+
+            if ("MENTOR".equals(loggedInUser.getRole().getName())) {
+                if (!task.getAssignedBy().getId().equals(loggedInUser.getId())) {
+                    throw new IllegalArgumentException("Mentor is not assigned to this project.");
+                }
+
+                if (taskPutDTO.getDuedate() != null) {
+                    task.setDueDate(taskPutDTO.getDuedate());
+                }
+
+                if (taskPutDTO.getScore() != null) {
+                    validateScoring(task);
+                    applyScoring(task, taskPutDTO.getScore());
+                }
+            }
+
+
+            else if ("STUDENT".equals(loggedInUser.getRole().getName())) {
+                boolean isStudentAssigned = studentProjectRepository.existsByStudentIdAndProjectIdAndIsDeletedFalse(
+                        loggedInUser.getId(),
+                        task.getAssignedTo().getId()
+                );
+
+                if (!isStudentAssigned) {
+                    throw new IllegalArgumentException("Student is not assigned to this task.");
+                }
+
+                if (taskPutDTO.getFile() != null && !taskPutDTO.getFile().isEmpty()) {
+                    if (task.getDueDate() != null && now.isAfter(task.getDueDate())) {
+                        throw new RuntimeException("Task is overdue and cannot be submitted.");
+                    }
+                    task.setFile(taskPutDTO.getFile().getBytes());
+                    task.setStatus("To be reviewed");
+                } else {
+                    throw new IllegalArgumentException("Include file");
+                }
+            } else {
+                throw new IllegalArgumentException("Unauthorized action");
+            }
+
+            task.setUpdatedAt(now);
+            task = taskRepository.save(task);
+            return convertToDTO(task);
+        }
+        private void validateScoring(Task task) {
+            LocalDateTime now = LocalDateTime.now();
+
+            if (task.getDueDate() == null) {
+                throw new RuntimeException("Task cannot be scored as due date is not set.");
+            }
+
+            if (now.isBefore(task.getDueDate())) {
+                throw new RuntimeException("Task cannot be scored before the due date.");
+            }
+
+            if (!task.getStatus().equals("To be reviewed")) {
+                throw new RuntimeException("Task cannot be scored unless it is in 'To be reviewed' status.");
             }
         }
+        private void applyScoring(Task task, int score) {
+            task.setScore(score);
+            task.setStatus("Completed");
 
+            Project project = task.getAssignedTo();
+            int totalProjectScore = taskRepository.sumScoresByProjectId(project.getId());
+            project.setScore(totalProjectScore);
+            projectRepository.save(project);
 
-        else {
-            throw new IllegalArgumentException("Unauthorized action");
+            List<StudentProject> studentProjects = studentProjectRepository.findByProjectIdAndIsDeletedFalse(project.getId());
+            for (StudentProject sp : studentProjects) {
+                int totalStudentScore = studentProjectRepository.sumScoresByStudentId(sp.getStudent().getId());
+                sp.getStudent().setScore(totalStudentScore);
+                userRepository.save(sp.getStudent());
+            }
+
+            College college = project.getCollege();
+            int totalCollegeScore = projectRepository.sumScoresByCollegeId(college.getId());
+            college.setScore(totalCollegeScore);
+            collegeRepository.save(college);
         }
-
-        task.setUpdatedAt(now);
-        task = taskRepository.save(task);
-
-        return convertToDTO(task);
-    }
 
 
     public TaskDTO getTaskbyId(UUID id){
@@ -200,18 +224,16 @@ public class TaskService {
             if (!isAssigned) {
                 throw new IllegalArgumentException("Student is not assigned to this project");
             }
-            System.out.println("Logged in user role: " + role);
-            System.out.println(isAssigned);
             List<StudentProject> studentProjects = studentProjectRepository.findAll();
             for (StudentProject sp : studentProjects) {
                 System.out.println("Student: " + sp.getStudent().getId() + " -> Project: " + sp.getProject().getId());
             }
-            System.out.println("repo kerii");
             tasks = taskRepository.findByAssignedToIdAndIsDeletedFalse(projectId);
             System.out.println("ernfi");
         } else {
             throw new RuntimeException("Unauthorized");
         }
+
 
         return tasks.stream()
                 .map(this::convertToDTO)

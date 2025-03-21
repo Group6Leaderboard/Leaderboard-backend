@@ -34,17 +34,24 @@ public class StudentProjectController {
     }
 
 
-    @GetMapping("/student/{studentId}")
-    public ResponseEntity<ApiResponse<List<Studentproject>>> getProjectsForStudent(@PathVariable UUID studentId) {
-        ApiResponse<List<Studentproject>> response = studentProjectService.getProjectsForStudent(studentId);
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<Studentproject>>> getStudentProjects(
+            @RequestParam(value = "studentId", required = false) UUID studentId,
+            @RequestParam(value = "projectId", required = false) UUID projectId) {
+
+        ApiResponse<List<Studentproject>> response;
+
+        if (studentId != null) {
+            response = studentProjectService.getProjectsForStudent(studentId);
+        } else if (projectId != null) {
+            response = studentProjectService.getStudentsForProject(projectId);
+        } else {
+            response = studentProjectService.getAllStudentProjects();
+        }
+
         return ResponseEntity.status(response.getStatus()).body(response);
     }
 
-    @GetMapping("/project/{projectId}")
-    public ResponseEntity<ApiResponse<List<Studentproject>>> getStudentsForProject(@PathVariable UUID projectId) {
-        ApiResponse<List<Studentproject>> response = studentProjectService.getStudentsForProject(projectId);
-        return ResponseEntity.status(response.getStatus()).body(response);
-    }
 
     @DeleteMapping("/{studentProjectId}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('COLLEGE')")
@@ -53,9 +60,5 @@ public class StudentProjectController {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).body(response);
     }
 
-    @GetMapping
-    public ResponseEntity<ApiResponse<List<Studentproject>>> getAllStudentProjects() {
-        ApiResponse<List<Studentproject>> response = studentProjectService.getAllStudentProjects();
-        return ResponseEntity.status(response.getStatus()).body(response);
-    }
+
 }

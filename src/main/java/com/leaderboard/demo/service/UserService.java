@@ -13,7 +13,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -41,24 +43,31 @@ public class UserService {
 
 
     @Transactional
-    public ApiResponse<UserResponseDto> updateUser(String loggedInUserEmail, UserDto userDto) {
+    public ApiResponse<UserResponseDto> updateUser(String loggedInUserEmail, UserDto userDto, MultipartFile image) {
         User user = userRepository.findByEmailAndIsDeletedFalse(loggedInUserEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-
-        if (userDto.getEmail() != null) {
-            throw new IllegalArgumentException("Email cannot be updated");
+        if (userDto != null) {
+            if (userDto.getEmail() != null) {
+                throw new IllegalArgumentException("Email cannot be updated");
+            }
+            if (userDto.getPassword() != null) {
+                user.setPassword(passwordEncoder.encode(userDto.getPassword()));
+            }
+            if (userDto.getPhone() != null) {
+                user.setPhone(userDto.getPhone());
+            }
         }
 
-        if (userDto.getPassword() != null) {
-            user.setPassword(passwordEncoder.encode(userDto.getPassword()));
-        }
-        if (userDto.getPhone() != null) {
-            user.setPhone(userDto.getPhone());
+        if (image != null && !image.isEmpty()) {
+            try {
+                user.setImage(image.getBytes());
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to process image upload", e);
+            }
         }
 
         user.setUpdatedAt(LocalDateTime.now());
-
         User updatedUser = userRepository.save(user);
         UserResponseDto dto = mapToDto(updatedUser);
 
@@ -168,6 +177,13 @@ public class UserService {
 
         return new ApiResponse<>(200, "Success", responses);
     }
+    public ApiResponse<UserResponseDto> getUsersByEmail(String email) {
+        User user = userRepository.findByEmailAndIsDeletedFalse(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+
+        UserResponseDto dto = mapToDto(user);
+        return new ApiResponse<>(200, "User fetched successfully", dto);
+    }
 
 
 
@@ -208,5 +224,6 @@ public class UserService {
                 user.getRole().getName()
         );
     }
+
 
 }

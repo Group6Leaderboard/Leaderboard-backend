@@ -26,4 +26,5 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
     @Query("SELECT COALESCE(SUM(t.score), 0) FROM Task t WHERE t.assignedTo.id = :projectId AND t.isDeleted = false")
     int sumScoresByProjectId(@Param("projectId") UUID projectId);
 
+    boolean existsByNameAndAssignedToIdAndIsDeletedFalse(String name, UUID projectId);
 }

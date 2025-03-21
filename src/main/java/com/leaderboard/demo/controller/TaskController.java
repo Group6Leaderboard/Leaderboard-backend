@@ -59,6 +59,9 @@ public class TaskController {
                                               @RequestParam(value = "file", required = false) MultipartFile file)
             {
                 try {
+                    if (dueDate != null && dueDate.isBefore(LocalDateTime.now())) {
+                        return ApiResponse.badRequest("Due date cannot be in the past.");
+                    }
                     TaskPutDTO taskPutDTO = new TaskPutDTO();
                     taskPutDTO.setDuedate(dueDate);
                     taskPutDTO.setScore(score);
