@@ -6,6 +6,7 @@ import com.leaderboard.demo.entity.College;
 import com.leaderboard.demo.entity.Role;
 import com.leaderboard.demo.entity.User;
 import com.leaderboard.demo.exception.ResourceNotFoundException;
+import com.leaderboard.demo.exception.UserAlreadyExistsException;
 import com.leaderboard.demo.repository.CollegeRepository;
 import com.leaderboard.demo.repository.RoleRepository;
 import com.leaderboard.demo.repository.UserRepository;
@@ -52,9 +53,9 @@ public class AuthService {
             throw new IllegalArgumentException("Unauthorized: Only Admin can register users");
         }
 
-        if (userRepository.existsByEmail(userSignupDto.getEmail()) ||
+        if (userRepository.existsByEmailAndIsDeletedFalse(userSignupDto.getEmail()) ||
                 collegeRepository.existsByEmail(userSignupDto.getEmail())) {
-            throw new IllegalArgumentException("User already exists");
+                    throw new UserAlreadyExistsException("User already exists");
         }
 
         Role assignedRole = roleRepository.findByName(userSignupDto.getRole().toUpperCase())
@@ -63,9 +64,9 @@ public class AuthService {
         BaseResponse responseDto;
 
         if (assignedRole.getName().equalsIgnoreCase("COLLEGE")) {
-            College existingCollege = collegeRepository.findByEmail(userSignupDto.getEmail()).orElse(null);
+            College existingCollege = collegeRepository.findByEmailAndIsDeletedFalse(userSignupDto.getEmail()).orElse(null);
             if (existingCollege != null) {
-                throw new IllegalArgumentException("College already exists with this email");
+                throw new UserAlreadyExistsException("College already exists");
             }
 
             College college = new College();
@@ -89,13 +90,13 @@ public class AuthService {
         } else {
             College college = null;
             if (userSignupDto.getCollegeId() != null) {
-                college = collegeRepository.findById(userSignupDto.getCollegeId())
+                college = collegeRepository.findByIdAndIsDeletedFalse(userSignupDto.getCollegeId())
                         .orElseThrow(() -> new ResourceNotFoundException("College not found"));
             }
 
-            User existingUser = userRepository.findByEmail(userSignupDto.getEmail()).orElse(null);
+            User existingUser = userRepository.findByEmailAndIsDeletedFalse(userSignupDto.getEmail()).orElse(null);
             if (existingUser != null) {
-                throw new IllegalArgumentException("User already exists with this email");
+                throw new UserAlreadyExistsException("User already exists");
             }
 
             User user = new User();
@@ -118,8 +119,6 @@ public class AuthService {
                     savedUser.getCollege() != null ? savedUser.getCollege().getId() : null,
                     savedUser.getRole().getName()
             );
-
-
         }
 
         return new ApiResponse<>(201, "Success", responseDto);
@@ -127,7 +126,7 @@ public class AuthService {
 
     public ApiResponse<BaseResponse> signupByCollege(UserSignupDto userSignupDto, College loggedInCollege) {
         if (userRepository.existsByEmail(userSignupDto.getEmail())) {
-            throw new IllegalArgumentException("User already exists");
+            throw new UserAlreadyExistsException("User already exists");
         }
 
         Role studentRole = roleRepository.findByName("STUDENT")
@@ -154,24 +153,24 @@ public class AuthService {
                 savedUser.getRole().getName()
 
 
-
         );
-
         return new ApiResponse<>(201, "Success", responseDto);
     }
 
 
 
     public ApiResponse<LoginResponse> login(LoginRequest loginRequest) {
-        User user = userRepository.findByEmail(loginRequest.getEmail()).orElse(null);
+        User user = userRepository.findByEmailAndIsDeletedFalse(loginRequest.getEmail()).orElse(null);
         College college = null;
         if (user == null) {
-            college = collegeRepository.findByEmail(loginRequest.getEmail()).orElse(null);
+            college = collegeRepository.findByEmailAndIsDeletedFalse(loginRequest.getEmail()).orElse(null);
         }
 
-        if ((user == null && college == null) ||
+        if (user == null && college == null) {
+            throw new ResourceNotFoundException("User not found");
+        } else if(
                 (user != null && !passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) ||
-                (college != null && !passwordEncoder.matches(loginRequest.getPassword(), college.getPassword()))) {
+                (college != null && !passwordEncoder.matches(loginRequest.getPassword(), college.getPassword())) ){
             throw new IllegalArgumentException("Invalid credentials");
         }
 

@@ -8,6 +8,7 @@ public class TaskPostDTO {
     private String name;
     private String description;
     private UUID assignedTo;
+    private LocalDateTime dueDate;
 
     public String getDescription() {
         return description;
@@ -41,7 +42,7 @@ public class TaskPostDTO {
         this.name = name;
     }
 
-    private LocalDateTime dueDate;
+
 
 
 }

@@ -38,7 +38,6 @@ public class AuthController {
             @RequestBody UserSignupDto signupDto,
             @RequestHeader("Authorization") String token) {
 
-        try {
             if (token == null || !token.startsWith("Bearer ")) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ApiResponse<>(401, "Invalid token format", null));
@@ -61,10 +60,6 @@ public class AuthController {
             }
 
             return ResponseEntity.status(response.getStatus()).body(response);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ApiResponse<>(400, "Failure: " + e.getMessage(), null));
-        }
     }
 
 

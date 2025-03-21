@@ -4,10 +4,14 @@ import com.leaderboard.demo.dto.ApiResponse;
 import com.leaderboard.demo.dto.TaskDTO;
 import com.leaderboard.demo.dto.TaskPostDTO;
 import com.leaderboard.demo.dto.TaskPutDTO;
+import com.leaderboard.demo.entity.User;
+import com.leaderboard.demo.repository.UserRepository;
 import com.leaderboard.demo.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -21,28 +25,43 @@ import java.util.UUID;
 public class TaskController {
     @Autowired
     private TaskService taskService;
+    @Autowired
+    private UserRepository userRepository;
 
-    @PostMapping("/{mentorId}")
-    public ResponseEntity<ApiResponse<TaskDTO>> createTask(@RequestBody TaskPostDTO taskPostDTO, @PathVariable UUID mentorId) {
+    @PostMapping
+    @PreAuthorize("hasRole('MENTOR')")
+    public ResponseEntity<ApiResponse<TaskDTO>> createTask(@RequestBody TaskPostDTO taskPostDTO) {
         try {
-            TaskDTO taskDTO = taskService.createTask(taskPostDTO, mentorId);
-            return ApiResponse.created(taskDTO, "Task created successfully");
+            UUID loggedInUserId = getLoggedInUserId();
+            TaskDTO taskDTO = taskService.createTask(taskPostDTO, loggedInUserId);
+            System.out.println("controller1");
+            return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(201, "Task created successfully", taskDTO));
         } catch (IllegalArgumentException e) {
-            return ApiResponse.badRequest(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse<>(400, e.getMessage(), null));
         } catch (RuntimeException e) {
-            return ApiResponse.badRequest(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse<>(400, e.getMessage(), null));
         }
     }
 
+    private UUID getLoggedInUserId() {
+        String loggedInUserEmail = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User loggedInUser = userRepository.findByEmailAndIsDeletedFalse(loggedInUserEmail)
+                .orElseThrow(() -> new RuntimeException("Logged in user not found"));
+        return loggedInUser.getId();
+    }
 
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('MENTOR') or hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<TaskDTO>> updateTask(@PathVariable UUID id,
                                               @RequestParam(value = "dueDate", required = false) LocalDateTime dueDate,
                                               @RequestParam(value = "score", required = false) Integer score,
                                               @RequestParam(value = "file", required = false) MultipartFile file)
             {
                 try {
+                    if (dueDate != null && dueDate.isBefore(LocalDateTime.now())) {
+                        return ApiResponse.badRequest("Due date cannot be in the past.");
+                    }
                     TaskPutDTO taskPutDTO = new TaskPutDTO();
                     taskPutDTO.setDuedate(dueDate);
                     taskPutDTO.setScore(score);
@@ -73,10 +92,18 @@ public class TaskController {
         return ApiResponse.success(tasks, "Tasks retrieved successfully");
 
     }
+    @GetMapping("/project/{projectId}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MENTOR') or hasRole('COLLEGE') or hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<List<TaskDTO>>> getTasksByProjectId(@PathVariable UUID projectId) {
+        List<TaskDTO> tasks = taskService.getTasksByProjectId(projectId);
+        return ResponseEntity.ok(new ApiResponse<>(200, "Tasks fetched successfully", tasks));
+    }
+
+
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deletTask(@PathVariable UUID id){
  try{
-     taskService.deletTask(id);
+     taskService.deleteTask(id);
      return ApiResponse.noContent("Task deleted Succesfully");
  }catch (RuntimeException e){
      return ApiResponse.badRequest(e.getMessage());

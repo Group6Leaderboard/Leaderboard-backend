@@ -42,67 +42,23 @@ public class UserService {
     }
 
 
-
-//    public ApiResponse<UserResponseDto> updateUser(UUID id, UserDto userDto) {
-//        User user = userRepository.findById(id)
-//                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-//
-//        String loggedInUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-//
-//        if (!user.getEmail().equals(loggedInUserEmail) &&
-//                !SecurityContextHolder.getContext().getAuthentication().getAuthorities()
-//                        .contains(new SimpleGrantedAuthority("ROLE_ADMIN"))) {
-//            throw new IllegalArgumentException("You are not authorized to update this user");
-//        }
-//
-//        if (userDto.getEmail() != null) {
-//            throw new IllegalArgumentException("Email cannot be updated");
-//        }
-//
-//        if (userDto.getPassword() != null) {
-//            user.setPassword(passwordEncoder.encode(userDto.getPassword()));
-//        }
-//        if (userDto.getPhone() != null) {
-//            user.setPhone(userDto.getPhone());
-//        }
-//
-//        user.setUpdatedAt(LocalDateTime.now());
-//
-//        User updatedUser = userRepository.save(user);
-//        UserResponseDto dto = mapToDto(updatedUser);
-//
-//        return new ApiResponse<>(200, "User updated successfully", dto);
-//    }
-
     @Transactional
-    public ApiResponse<UserResponseDto> updateUser(UUID id, UserDto userDto, MultipartFile image) {
-        User user = userRepository.findById(id)
+    public ApiResponse<UserResponseDto> updateUser(String loggedInUserEmail, UserDto userDto, MultipartFile image) {
+        User user = userRepository.findByEmailAndIsDeletedFalse(loggedInUserEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        String loggedInUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        if (!user.getEmail().equals(loggedInUserEmail) &&
-                !SecurityContextHolder.getContext().getAuthentication().getAuthorities()
-                        .contains(new SimpleGrantedAuthority("ROLE_ADMIN"))) {
-            throw new IllegalArgumentException("You are not authorized to update this user");
-        }
-
-        // Handle userDto updates if provided
         if (userDto != null) {
             if (userDto.getEmail() != null) {
                 throw new IllegalArgumentException("Email cannot be updated");
             }
-
             if (userDto.getPassword() != null) {
                 user.setPassword(passwordEncoder.encode(userDto.getPassword()));
             }
-
             if (userDto.getPhone() != null) {
                 user.setPhone(userDto.getPhone());
             }
         }
 
-        // Handle image upload if provided
         if (image != null && !image.isEmpty()) {
             try {
                 user.setImage(image.getBytes());
@@ -112,12 +68,12 @@ public class UserService {
         }
 
         user.setUpdatedAt(LocalDateTime.now());
-
         User updatedUser = userRepository.save(user);
         UserResponseDto dto = mapToDto(updatedUser);
 
         return new ApiResponse<>(200, "User updated successfully", dto);
     }
+
     public ApiResponse<UserResponseDto> getUserById(UUID userId) {
         User user = userRepository.findByIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -175,7 +131,6 @@ public class UserService {
                         ))
                         .collect(Collectors.toList());
             } else if (hasRole("ADMIN")) {
-                // Admin can fetch all students
                 List<User> users = userRepository.findByRoleNameAndIsDeletedFalse(roleName);
 
                 if (users.isEmpty()) {
@@ -197,7 +152,6 @@ public class UserService {
                 throw new IllegalArgumentException("Unauthorized to access student details");
             }
         } else {
-            // Admin can fetch other user roles (like MENTOR)
             if (!hasRole("ADMIN")) {
                 throw new IllegalArgumentException("Unauthorized to access " + roleName + " details");
             }
@@ -223,6 +177,13 @@ public class UserService {
 
         return new ApiResponse<>(200, "Success", responses);
     }
+    public ApiResponse<UserResponseDto> getUsersByEmail(String email) {
+        User user = userRepository.findByEmailAndIsDeletedFalse(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+
+        UserResponseDto dto = mapToDto(user);
+        return new ApiResponse<>(200, "User fetched successfully", dto);
+    }
 
 
 
@@ -238,7 +199,7 @@ public class UserService {
     }
 
     public ApiResponse<String> deleteUser(UUID userId) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (user.isDeleted()) {
@@ -259,9 +220,10 @@ public class UserService {
                 user.getEmail(),
                 user.getPhone(),
                 user.getScore(),
-                user.getCollege() != null ? user.getCollege().getId() : null, // ✅ Handle null college case
-                user.getRole().getName() // ✅ Get role name, not ID
+                user.getCollege() != null ? user.getCollege().getId() : null,
+                user.getRole().getName()
         );
     }
+
 
 }
