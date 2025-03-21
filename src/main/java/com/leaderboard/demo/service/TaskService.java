@@ -30,24 +30,7 @@ public class TaskService {
     @Autowired
     private UserRepository userRepository;
 
-//    public TaskDTO createTask(TaskPostDTO taskPostDTO, UUID assignedBy){
-//        Task task=new Task();
-//        task.setName(taskPostDTO.getName());
-//        task.setDescription(taskPostDTO.getDescription());
-//        task.setDueDate(taskPostDTO.getDueDate());
-//        task.setStatus("TODO"); //default
-//
-//        Project project = projectRepository.findById(taskPostDTO.getAssignedTo())
-//                .orElseThrow(() -> new RuntimeException("Project not found"));
-//        task.setAssignedTo(project);
-//
-//        User mentor = userRepository.findById(assignedBy).orElse(null);
-//        task.setAssignedBy(mentor);
-//
-//        task = taskRepository.save(task);
-//        return convertToDTO(task);
-//
-//    }
+
 
     //with validation
     public TaskDTO createTask(TaskPostDTO taskPostDTO,UUID assignedBy){
@@ -58,6 +41,10 @@ public class TaskService {
 
         if(!project.getMentor().getId().equals(mentor.getId())){
             throw new IllegalArgumentException("Mentor is not assigned to the project.");
+        }
+        //
+        if(taskRepository.existsByNameAndAssignedToIdAndIsDeletedFalse(taskPostDTO.getName(),taskPostDTO.getAssignedTo())){
+            throw new IllegalArgumentException("Task name already exists in the project.");
         }
         Task task = new Task();
         task.setName(taskPostDTO.getName());
@@ -71,44 +58,52 @@ public class TaskService {
         return convertToDTO(task);
     }
 
-    public TaskDTO updateTask(UUID id, TaskPutDTO taskPutDTO) throws IOException {
-        Task task = taskRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new RuntimeException("Task not found or deleted"));
+public TaskDTO updateTask(UUID id,TaskPutDTO taskPutDTO) throws IOException{
+    Task task = taskRepository.findByIdAndIsDeletedFalse(id)
+            .orElseThrow(() -> new RuntimeException("Task not found or deleted"));
 
-        LocalDateTime now = LocalDateTime.now();
+    LocalDateTime now = LocalDateTime.now();
 
-        // Check for overdue status if due date has passed and file not submitted
-        if (task.getDueDate() != null && now.isAfter(task.getDueDate()) && task.getStatus().equals("Not Submitted")) {
-            task.setStatus("Overdue");
-            taskRepository.save(task);
-            if (taskPutDTO.getFile() != null && !taskPutDTO.getFile().isEmpty()){
-                throw new RuntimeException("Task is overdue and cannot be submitted.");
-            }
+    if(task.getDueDate()!=null && now.isAfter(task.getDueDate()) && task.getStatus().equals("Not submitted")){
+        task.setStatus("Overdue");
+        taskRepository.save(task);
+        if(taskPutDTO.getFile()!=null && !taskPutDTO.getFile().isEmpty()){
+            throw new RuntimeException("Task is overdue and cannot be submitted.");
         }
-
-        if (taskPutDTO.getDuedate() != null) {
-            task.setDueDate(taskPutDTO.getDuedate());
-        }
-        if (taskPutDTO.getScore() != null) {
-            task.setScore(taskPutDTO.getScore());
-        }
-
-        if (taskPutDTO.getFile() != null && !taskPutDTO.getFile().isEmpty()) {
-            if (task.getDueDate() != null && now.isAfter(task.getDueDate())) {
-                throw new RuntimeException("Task is overdue and cannot be submitted.");
-            }
-            task.setFile(taskPutDTO.getFile().getBytes());
-            task.setStatus("To be reviewed");
-        }
-
-        //If score is present and file is present, status should be completed.
-        if(task.getScore() != null && task.getFile() != null){
-            task.setStatus("Completed");
-        }
-
-        task = taskRepository.save(task);
-        return convertToDTO(task);
     }
+    //update if dueDate if provided
+    if(taskPutDTO.getDuedate()!=null){
+        task.setDueDate(taskPutDTO.getDuedate());
+    }
+    // Process file upload if provided
+    if(taskPutDTO.getFile()!=null && !taskPutDTO.getFile().isEmpty()){
+        if(task.getDueDate() !=null && now.isAfter(task.getDueDate())){
+            throw new RuntimeException("Task is overdue and cannot be submitted .");
+        }
+        task.setFile(taskPutDTO.getFile().getBytes());
+        task.setStatus("To be reviewed");
+    }
+    // Process scoring if provided
+    if(taskPutDTO.getScore()!=null){
+
+        //validate scoring conditions
+        if(task.getDueDate()==null){
+            throw new RuntimeException("Task cannot be scored as due date is not set.");
+
+        }
+        if(now.isBefore(task.getDueDate())){
+            throw new RuntimeException("Task cannot be scored before te due date.");
+        }
+        if(!task.getStatus().equals("To be reviewed")){
+            throw new RuntimeException("Task cannot be scored unless it is in 'To be reviewed' status.");
+        }
+        // Apply score and update status
+        task.setScore(taskPutDTO.getScore());
+        task.setStatus("Completed");
+    }
+    task = taskRepository.save(task);
+    return convertToDTO(task);
+}
 
     public TaskDTO getTaskbyId(UUID id){
         Task task = taskRepository.findByIdAndIsDeletedFalse(id).orElse(null);
@@ -129,20 +124,50 @@ public class TaskService {
         taskRepository.save(task);
 
     }
+//
+//    public TaskDTO scoreTask(UUID id, Integer score) {
+//        Task task = taskRepository.findByIdAndIsDeletedFalse(id)
+//                .orElseThrow(() -> new RuntimeException("Task not found or deleted"));
+//
+//        if (!task.getStatus().equals("To be reviewed") && !LocalDateTime.now().isAfter(task.getDueDate())) {
+//            throw new RuntimeException("Task cannot be scored before review or before due date.");
+//        }
+//
+//        task.setScore(score);
+//        task.setStatus("Completed");
+//        task = taskRepository.save(task);
+//        return convertToDTO(task);
+//    }
+public TaskDTO scoreTask(UUID id, Integer score) {
+    Task task = taskRepository.findByIdAndIsDeletedFalse(id)
+            .orElseThrow(() -> new RuntimeException("Task not found or deleted"));
 
-    public TaskDTO scoreTask(UUID id, Integer score) {
-        Task task = taskRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new RuntimeException("Task not found or deleted"));
+    LocalDateTime now = LocalDateTime.now();
 
-        if (!task.getStatus().equals("To be reviewed") && !LocalDateTime.now().isAfter(task.getDueDate())) {
-            throw new RuntimeException("Task cannot be scored before review or before due date.");
-        }
-
-        task.setScore(score);
-        task.setStatus("Completed");
-        task = taskRepository.save(task);
-        return convertToDTO(task);
+    // ✅ Check if due date is set
+    if (task.getDueDate() == null) {
+        throw new RuntimeException("Task cannot be scored as due date is not set.");
     }
+
+    // ✅ Ensure scoring is allowed only after the due date
+    if (now.isBefore(task.getDueDate())) {
+        throw new RuntimeException("Task cannot be scored before the due date.");
+    }
+
+    // ✅ Allow scoring only if status is "To be reviewed"
+    if (!task.getStatus().equals("To be reviewed")) {
+        throw new RuntimeException("Task cannot be scored unless it is in 'To be reviewed' status.");
+    }
+
+    task.setScore(score);
+    task.setStatus("Completed");
+    task = taskRepository.save(task);
+
+    return convertToDTO(task);
+}
+
+
+
     private TaskDTO convertToDTO(Task task){
         TaskDTO dto=new TaskDTO();
         dto.setId(task.getId());

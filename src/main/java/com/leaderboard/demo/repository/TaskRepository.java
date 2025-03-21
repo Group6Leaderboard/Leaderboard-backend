@@ -14,4 +14,5 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
     List<Task> findByAssignedToId(UUID projectId);
     List<Task> findByIsDeletedFalse();
     Optional<Task> findByIdAndIsDeletedFalse(UUID id);
+    boolean existsByNameAndAssignedToIdAndIsDeletedFalse(String name, UUID projectId);
 }
