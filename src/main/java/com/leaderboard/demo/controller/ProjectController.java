@@ -2,6 +2,7 @@ package com.leaderboard.demo.controller;
 
 import com.leaderboard.demo.dto.ApiResponse;
 import com.leaderboard.demo.dto.ProjectDto;
+import com.leaderboard.demo.dto.ProjectResponseDto;
 import com.leaderboard.demo.service.ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,8 +21,8 @@ public class ProjectController {
 
     @PreAuthorize("hasRole('ADMIN') or hasRole('MENTOR') or hasRole('COLLEGE') or hasRole('STUDENT')")
     @GetMapping
-    public ResponseEntity<ApiResponse<List<ProjectDto>>> getAllProjects() {
-        List<ProjectDto> projects = projectService.getAllProjects();
+    public ResponseEntity<ApiResponse<List<ProjectResponseDto>>> getAllProjects() {
+        List<ProjectResponseDto> projects = projectService.getAllProjects();
         return ResponseEntity.ok(
                 new ApiResponse<>(200, "Projects fetched successfully", projects)
         );
@@ -29,8 +30,8 @@ public class ProjectController {
 
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<ProjectDto>> getProjectById(@PathVariable UUID id) {
-        ProjectDto project = projectService.getProjectById(id)
+    public ResponseEntity<ApiResponse<ProjectResponseDto>> getProjectById(@PathVariable UUID id) {
+        ProjectResponseDto project = projectService.getProjectById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Project not found"));
 
         return ResponseEntity.ok(new ApiResponse<>(200, "Project fetched successfully", project));
@@ -38,18 +39,18 @@ public class ProjectController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<ProjectDto>> createProject(@RequestBody ProjectDto projectDto) {
-        ProjectDto savedProject = projectService.createProject(projectDto);
+    public ResponseEntity<ApiResponse<ProjectResponseDto>> createProject(@RequestBody ProjectDto projectDto) {
+        ProjectResponseDto savedProject = projectService.createProject(projectDto);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new ApiResponse<>(201, "Project created successfully", savedProject));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<ProjectDto>> updateProject(
+    public ResponseEntity<ApiResponse<ProjectResponseDto>> updateProject(
             @PathVariable UUID id,
             @RequestBody ProjectDto projectDto) {
 
-        ProjectDto updatedProject = projectService.updateProject(id, projectDto);
+        ProjectResponseDto updatedProject = projectService.updateProject(id, projectDto);
         return ResponseEntity.ok(new ApiResponse<>(200, "Project updated successfully", updatedProject));
     }
 

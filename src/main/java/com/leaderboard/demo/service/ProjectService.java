@@ -1,6 +1,7 @@
 package com.leaderboard.demo.service;
 
 import com.leaderboard.demo.dto.ProjectDto;
+import com.leaderboard.demo.dto.ProjectResponseDto;
 import com.leaderboard.demo.entity.College;
 import com.leaderboard.demo.entity.Project;
 import com.leaderboard.demo.entity.StudentProject;
@@ -34,7 +35,7 @@ public class ProjectService {
     @Autowired
     private StudentProjectRepository studentProjectRepository;
 
-    public List<ProjectDto> getAllProjects() {
+    public List<ProjectResponseDto> getAllProjects() {
         String loggedInUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         List<Project> projects;
 
@@ -76,12 +77,12 @@ public class ProjectService {
                 .anyMatch(auth -> auth.getAuthority().equals("ROLE_" + role));
     }
 
-    public Optional<ProjectDto> getProjectById(UUID projectId) {
+    public Optional<ProjectResponseDto> getProjectById(UUID projectId) {
         return projectRepository.findByIdAndIsDeletedFalse(projectId)
                 .map(this::mapToDto);
     }
 
-    public ProjectDto createProject(ProjectDto projectDto) {
+    public ProjectResponseDto createProject(ProjectDto projectDto) {
         if (projectDto.getMentorId() == null) {
             throw new IllegalArgumentException("Mentor ID is required");
         }
@@ -106,7 +107,7 @@ public class ProjectService {
         return mapToDto(savedProject);
     }
 
-    public ProjectDto updateProject(UUID projectId, ProjectDto projectDto) {
+    public ProjectResponseDto updateProject(UUID projectId, ProjectDto projectDto) {
         Project project = projectRepository.findByIdAndIsDeletedFalse(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
@@ -151,14 +152,14 @@ public class ProjectService {
         return true;
     }
 
-    private ProjectDto mapToDto(Project project) {
-        ProjectDto dto = new ProjectDto();
+    private ProjectResponseDto mapToDto(Project project) {
+        ProjectResponseDto dto = new ProjectResponseDto();
         dto.setId(project.getId());
         dto.setName(project.getName());
         dto.setDescription(project.getDescription());
         dto.setScore(project.getScore());
-        dto.setCollegeId(project.getCollege() != null ? project.getCollege().getId() : null);
-        dto.setMentorId(project.getMentor() != null ? project.getMentor().getId() : null);
+        dto.setCollegeName(project.getCollege() != null ? project.getCollege().getName() : null);
+        dto.setMentorName(project.getMentor() != null ? project.getMentor().getName() : null);
         return dto;
     }
 }

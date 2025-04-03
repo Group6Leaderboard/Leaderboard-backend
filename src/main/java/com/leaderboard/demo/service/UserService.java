@@ -8,6 +8,8 @@ import com.leaderboard.demo.repository.CollegeRepository;
 import com.leaderboard.demo.repository.RoleRepository;
 import com.leaderboard.demo.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -74,6 +76,7 @@ public class UserService {
         return new ApiResponse<>(200, "User updated successfully", dto);
     }
 
+    @Transactional
     public ApiResponse<UserResponseDto> getUserById(UUID userId) {
         User user = userRepository.findByIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -82,6 +85,7 @@ public class UserService {
         return new ApiResponse<>(200, "Success", dto);
     }
 
+    @Transactional
     public ApiResponse<List<BaseResponse>> getUsersByRole(String roleName) {
         List<BaseResponse> responses;
 
@@ -103,7 +107,8 @@ public class UserService {
                             college.getEmail(),
                             college.getLocation(),
                             college.getAbout(),
-                            college.getRole() != null ? college.getRole().getName() : null
+                            college.getRole() != null ? college.getRole().getName() : null,
+                            college.getScore()
                     ))
                     .collect(Collectors.toList());
 
@@ -126,8 +131,9 @@ public class UserService {
                                 user.getEmail(),
                                 user.getPhone(),
                                 user.getScore(),
-                                user.getCollege() != null ? user.getCollege().getId() : null,
-                                user.getRole().getName()
+                                user.getCollege() != null ? user.getCollege().getName() : null,
+                                user.getRole().getName(),
+                                user.getImage()
                         ))
                         .collect(Collectors.toList());
             } else if (hasRole("ADMIN")) {
@@ -144,8 +150,9 @@ public class UserService {
                                 user.getEmail(),
                                 user.getPhone(),
                                 user.getScore(),
-                                user.getCollege() != null ? user.getCollege().getId() : null,
-                                user.getRole().getName()
+                                user.getCollege() != null ? user.getCollege().getName() : null,
+                                user.getRole().getName(),
+                                user.getImage()
                         ))
                         .collect(Collectors.toList());
             } else {
@@ -169,15 +176,26 @@ public class UserService {
                             user.getEmail(),
                             user.getPhone(),
                             user.getScore(),
-                            user.getCollege() != null ? user.getCollege().getId() : null,
-                            user.getRole().getName()
+                            user.getCollege() != null ? user.getCollege().getName() : null,
+                            user.getRole().getName(),
+                            user.getImage()
                     ))
                     .collect(Collectors.toList());
         }
 
         return new ApiResponse<>(200, "Success", responses);
     }
+    @Transactional
     public ApiResponse<UserResponseDto> getUsersByEmail(String email) {
+        User user = userRepository.findByEmailAndIsDeletedFalse(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+
+        UserResponseDto dto = mapToDto(user);
+        return new ApiResponse<>(200, "User fetched successfully", dto);
+    }
+
+    @Transactional
+    public ApiResponse<UserResponseDto> getUserByEmail(String email) {
         User user = userRepository.findByEmailAndIsDeletedFalse(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
 
@@ -187,7 +205,7 @@ public class UserService {
 
 
 
-
+    @Transactional
     public ApiResponse<List<UserResponseDto>> getAllUsers() {
         List<User> users = userRepository.findByIsDeletedFalse();
 
@@ -197,6 +215,45 @@ public class UserService {
 
         return new ApiResponse<>(200, "Success", userDtos);
     }
+
+    @Transactional
+    public ApiResponse<BaseResponse> getUser() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        Optional<User> optionalUser = userRepository.findByEmailAndIsDeletedFalse(email);
+
+        BaseResponse response;
+
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+            response = new UserResponseDto(
+                    user.getId(),
+                    user.getName(),
+                    user.getEmail(),
+                    user.getPhone(),
+                    user.getScore(),
+                    user.getCollege() != null ? user.getCollege().getName() : null,
+                    user.getRole().getName(),
+                    user.getImage()
+            );
+        } else {
+            College loggedInCollege = collegeRepository.findByEmailAndIsDeletedFalse(email)
+                    .orElseThrow(() -> new IllegalArgumentException("Logged-in college not found"));
+
+            response = new CollegeDTO(
+                    loggedInCollege.getId(),
+                    loggedInCollege.getName(),
+                    loggedInCollege.getEmail(),
+                    loggedInCollege.getLocation(),
+                    loggedInCollege.getAbout(),
+                    loggedInCollege.getRole() != null ? loggedInCollege.getRole().getName() : null,
+                    loggedInCollege.getScore()
+            );
+        }
+
+        return new ApiResponse<>(200, "Success", response);
+    }
+
 
     public ApiResponse<String> deleteUser(UUID userId) {
         User user = userRepository.findByIdAndIsDeletedFalse(userId)
@@ -220,10 +277,23 @@ public class UserService {
                 user.getEmail(),
                 user.getPhone(),
                 user.getScore(),
-                user.getCollege() != null ? user.getCollege().getId() : null,
-                user.getRole().getName()
+                user.getCollege() != null ? user.getCollege().getName() : null,
+                user.getRole().getName(),
+                user.getImage()
         );
     }
+    private CollegeDTO mapToDto(College college) {
+        return new CollegeDTO(
+                college.getId(),
+                college.getName(),
+                college.getLocation(),
+                college.getAbout(),
+                college.getEmail(),
+                college.getRole().getName(),
+                college.getScore()
+        );
+    }
+
 
 
 }

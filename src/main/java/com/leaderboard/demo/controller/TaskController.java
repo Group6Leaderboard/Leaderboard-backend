@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -87,11 +88,16 @@ public class TaskController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('MENTOR')")
     public ResponseEntity<ApiResponse<List<TaskDTO>>> getAllTasks() {
-        List<TaskDTO> tasks = taskService.getAllTasks();
-        return ApiResponse.success(tasks, "Tasks retrieved successfully");
+        String loggedInUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        System.out.println(loggedInUserEmail);
 
+        List<TaskDTO> tasks = taskService.getTasksAssignedBy(loggedInUserEmail);
+        return ApiResponse.success(tasks, "Tasks retrieved successfully");
     }
+
+
     @GetMapping("/project/{projectId}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('MENTOR') or hasRole('COLLEGE') or hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<List<TaskDTO>>> getTasksByProjectId(@PathVariable UUID projectId) {
