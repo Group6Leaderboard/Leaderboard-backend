@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -86,7 +87,8 @@ public class AuthService {
                     savedCollege.getEmail(),
                     savedCollege.getLocation(),
                     savedCollege.getAbout(),
-                    savedCollege.getRole() != null ? savedCollege.getRole().getName() : null
+                    savedCollege.getRole() != null ? savedCollege.getRole().getName() : null,
+                    savedCollege.getScore()
             );
         } else {
             College college = null;
@@ -117,8 +119,9 @@ public class AuthService {
                     savedUser.getEmail(),
                     savedUser.getPhone(),
                     savedUser.getScore(),
-                    savedUser.getCollege() != null ? savedUser.getCollege().getId() : null,
-                    savedUser.getRole().getName()
+                    savedUser.getCollege() != null ? savedUser.getCollege().getName() : null,
+                    savedUser.getRole().getName(),
+                    savedUser.getImage()
             );
         }
 
@@ -150,8 +153,9 @@ public class AuthService {
                 savedUser.getEmail(),
                 savedUser.getPhone(),
                 savedUser.getScore(),
-                savedUser.getCollege() != null ? savedUser.getCollege().getId() : null,
-                savedUser.getRole().getName()
+                savedUser.getCollege() != null ? savedUser.getCollege().getName() : null,
+                savedUser.getRole().getName(),
+                savedUser.getImage()
 
 
         );
@@ -174,7 +178,7 @@ public class AuthService {
         } else if(
                 (user != null && !passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) ||
                 (college != null && !passwordEncoder.matches(loginRequest.getPassword(), college.getPassword())) ){
-            throw new IllegalArgumentException("Invalid credentials");
+            throw new ResourceNotFoundException("Invalid credentials");
         }
 
         String token;

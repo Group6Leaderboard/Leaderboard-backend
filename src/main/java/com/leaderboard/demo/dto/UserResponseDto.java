@@ -12,17 +12,31 @@ public class UserResponseDto implements BaseResponse{
     private String email;
     private String phone;
     private int score;
-    private UUID collegeId;
+    private String collegeName;
     private String role;
+    private byte[] image;
 
-    public UserResponseDto(UUID id, String name, String email, String phone, int score, UUID collegeId, String role) {
+    public UserResponseDto(UUID id, String name, String email, String phone, int score, String collegeName, String role, byte[] image) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.phone = phone;
         this.score = score;
-        this.collegeId = collegeId;
+        this.collegeName = collegeName;
         this.role = role;
+        this.image = image;
+    }
+
+    public void setCollegeName(String collegeName) {
+        this.collegeName = collegeName;
+    }
+
+    public byte[] getImage() {
+        return image;
+    }
+
+    public void setImage(byte[] image) {
+        this.image = image;
     }
 
     public UUID getId() {
@@ -65,12 +79,12 @@ public class UserResponseDto implements BaseResponse{
         this.score = score;
     }
 
-    public UUID getCollegeId() {
-        return collegeId;
+    public String getCollegeName() {
+        return collegeName;
     }
 
-    public void setCollegeId(UUID collegeId) {
-        this.collegeId = collegeId;
+    public void setCollegeId(String collegeId) {
+        this.collegeName = collegeName;
     }
 
     public String getRole() {

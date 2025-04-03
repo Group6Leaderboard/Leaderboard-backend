@@ -36,7 +36,7 @@ public class Task {
     @JoinColumn(name = "assigned_to",nullable=false)
     private Project assignedTo;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assignedBy",nullable = true)
     private User assignedBy;
 

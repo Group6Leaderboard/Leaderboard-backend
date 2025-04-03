@@ -16,14 +16,16 @@ public class CollegeDTO implements BaseResponse{
     private String about;
     private String email;
     private String roleName;
+    private int score;
 
-    public CollegeDTO(UUID id, String name, String email, String location, String about, String roleName) {
+    public CollegeDTO(UUID id, String name, String email, String location, String about, String roleName, int score) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.location = location;
         this.about = about;
         this.roleName = roleName;
+        this.score =score;
     }
 
 
