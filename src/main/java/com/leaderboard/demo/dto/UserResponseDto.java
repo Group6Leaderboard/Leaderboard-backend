@@ -15,6 +15,7 @@ public class UserResponseDto implements BaseResponse{
     private UUID collegeId;
     private String role;
 
+
     public UserResponseDto(UUID id, String name, String email, String phone, int score, UUID collegeId, String role) {
         this.id = id;
         this.name = name;
@@ -23,6 +24,7 @@ public class UserResponseDto implements BaseResponse{
         this.score = score;
         this.collegeId = collegeId;
         this.role = role;
+
     }
 
     public UUID getId() {
@@ -80,4 +82,6 @@ public class UserResponseDto implements BaseResponse{
     public void setRole(String role) {
         this.role = role;
     }
+
+
 }
