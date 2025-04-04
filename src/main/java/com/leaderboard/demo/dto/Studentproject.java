@@ -38,5 +38,6 @@ public class Studentproject {
     public void setProjectId(UUID projectId) {
         this.projectId = projectId;
     }
+
 }
 

@@ -2,6 +2,7 @@ package com.leaderboard.demo.service;
 
 import com.leaderboard.demo.dto.ApiResponse;
 import com.leaderboard.demo.dto.Studentproject;
+import com.leaderboard.demo.dto.UserResponseDto;
 import com.leaderboard.demo.entity.Project;
 import com.leaderboard.demo.entity.StudentProject;
 import com.leaderboard.demo.entity.User;
@@ -9,7 +10,10 @@ import com.leaderboard.demo.exception.ResourceNotFoundException;
 import com.leaderboard.demo.repository.ProjectRepository;
 import com.leaderboard.demo.repository.StudentProjectRepository;
 import com.leaderboard.demo.repository.UserRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -132,5 +136,30 @@ public class StudentProjectService {
 
         return new ApiResponse<>(200, "Success", dtoList);
     }
+
+    @Transactional
+    public List<UserResponseDto> getUserDtosForProject(UUID projectId) {
+        List<StudentProject> studentProjects = studentProjectRepository.findByProjectIdAndIsDeletedFalse(projectId);
+
+        List<UUID> studentIds = studentProjects.stream()
+                .map(sp -> sp.getStudent().getId())
+                .collect(Collectors.toList());
+
+        List<User> users = userRepository.findByIdInAndIsDeletedFalse(studentIds);
+
+        return users.stream()
+                .map(user -> new UserResponseDto(
+                        user.getId(),
+                        user.getName(),
+                        user.getEmail(),
+                        user.getPhone(),
+                        user.getScore(),
+                        user.getCollege().getName(),
+                        user.getRole().getName(),
+                        user.getImage()
+                ))
+                .collect(Collectors.toList());
+    }
+
 
 }
