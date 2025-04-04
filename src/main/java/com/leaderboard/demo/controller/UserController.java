@@ -4,18 +4,24 @@ import com.leaderboard.demo.dto.ApiResponse;
 import com.leaderboard.demo.dto.BaseResponse;
 import com.leaderboard.demo.dto.UserDto;
 import com.leaderboard.demo.dto.UserResponseDto;
+import com.leaderboard.demo.entity.College;
 import com.leaderboard.demo.entity.User;
+import com.leaderboard.demo.repository.CollegeRepository;
+import com.leaderboard.demo.repository.UserRepository;
 import com.leaderboard.demo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -24,11 +30,20 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private CollegeRepository collegeRepository;
 
 
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('COLLEGE') and #roleName == 'STUDENT')")
+    @PreAuthorize(
+            "hasRole('ADMIN') or " +
+                    "(hasRole('COLLEGE') and (#roleName == null or #roleName == 'STUDENT')) or " +
+                    "hasRole('STUDENT') or hasRole('MENTOR')"
+    )
+    @Transactional
     public ResponseEntity<ApiResponse<Object>> getUsers(
             @RequestParam(value = "role", required = false) String roleName,
             @RequestParam(value = "email", required = false) String email,
@@ -52,8 +67,13 @@ public class UserController {
             return ResponseEntity.status(response.getStatus())
                     .body(new ApiResponse<>(response.getStatus(), response.getMessage(), response.getResponse()));
         }
+        else {
+            ApiResponse<BaseResponse> response = userService.getUser();
+            return ResponseEntity.status(response.getStatus())
+                    .body(new ApiResponse<>(response.getStatus(), response.getMessage(), response.getResponse()));
 
-        return ResponseEntity.badRequest().body(new ApiResponse<>(400, "Provide either 'id', 'email', or 'role'", null));
+    }
+
     }
 
 

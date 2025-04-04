@@ -2,6 +2,7 @@ package com.leaderboard.demo.controller;
 
 import com.leaderboard.demo.dto.ApiResponse;
 import com.leaderboard.demo.dto.Studentproject;
+import com.leaderboard.demo.dto.UserResponseDto;
 import com.leaderboard.demo.entity.StudentProject;
 import com.leaderboard.demo.service.StudentProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,6 +52,24 @@ public class StudentProjectController {
 
         return ResponseEntity.status(response.getStatus()).body(response);
     }
+
+    @GetMapping("/members")
+    public ResponseEntity<ApiResponse<List<UserResponseDto>>> getMembersForProject(
+            @RequestParam UUID projectId) {
+
+        List<UserResponseDto> members = studentProjectService.getUserDtosForProject(projectId);
+
+        ApiResponse<List<UserResponseDto>> response = new ApiResponse<>(
+                HttpStatus.OK.value(),
+                "Members fetched",
+                members
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+
+
 
 
     @DeleteMapping("/{studentProjectId}")

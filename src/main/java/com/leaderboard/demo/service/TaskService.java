@@ -5,6 +5,7 @@ import com.leaderboard.demo.dto.TaskPostDTO;
 import com.leaderboard.demo.dto.TaskPutDTO;
 import com.leaderboard.demo.dto.UserDto;
 import com.leaderboard.demo.entity.*;
+import com.leaderboard.demo.exception.ResourceNotFoundException;
 import com.leaderboard.demo.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -33,6 +34,16 @@ public class TaskService {
     @Autowired
     private UserRepository userRepository;
 
+    @Transactional
+    public List<TaskDTO> getTasksAssignedBy(String email) {
+        User mentor = userRepository.findByEmailAndIsDeletedFalse(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Mentor not found"));
+
+        return taskRepository.findByAssignedByAndIsDeletedFalse(mentor)
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
 
 
     @Transactional
@@ -175,6 +186,7 @@ public class TaskService {
         return convertToDTO(task);
     }
 
+    @Transactional
     public List<TaskDTO> getAllTasks(){
         return taskRepository.findByIsDeletedFalse().stream().map(this::convertToDTO).collect(Collectors.toList());
     }
