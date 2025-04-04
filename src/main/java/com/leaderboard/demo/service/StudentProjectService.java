@@ -1,6 +1,7 @@
 package com.leaderboard.demo.service;
 
 import com.leaderboard.demo.dto.ApiResponse;
+import com.leaderboard.demo.dto.ProjectDto;
 import com.leaderboard.demo.dto.Studentproject;
 import com.leaderboard.demo.dto.UserResponseDto;
 import com.leaderboard.demo.entity.Project;
@@ -160,6 +161,25 @@ public class StudentProjectService {
                 ))
                 .collect(Collectors.toList());
     }
+    @Transactional
+    public List<ProjectDto> getProjectsForStudents(UUID studentId) {
+        List<StudentProject> studentProjects = studentProjectRepository.findByStudentIdAndIsDeletedFalse(studentId);
+
+        return studentProjects.stream()
+                .map(sp -> {
+                    Project project = sp.getProject();
+                    return new ProjectDto(
+                            project.getId(),
+                            project.getName(),
+                            project.getDescription(),
+                            project.getScore(),
+                            project.getMentor().getId(),
+                            project.getCollege().getId()
+                    );
+                })
+                .collect(Collectors.toList());
+    }
+
 
 
 }

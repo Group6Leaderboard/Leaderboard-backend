@@ -15,6 +15,15 @@ public class ProjectDto {
     private UUID mentorId;
     private UUID collegeId;
 
+    public ProjectDto(UUID id, String name, String description, Integer score, UUID mentorId, UUID collegeId) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.score = score;
+        this.mentorId = mentorId;
+        this.collegeId = collegeId;
+    }
+
     public UUID getId() {
         return id;
     }
