@@ -160,6 +160,7 @@ public class ProjectService {
         dto.setScore(project.getScore());
         dto.setCollegeName(project.getCollege() != null ? project.getCollege().getName() : null);
         dto.setMentorName(project.getMentor() != null ? project.getMentor().getName() : null);
+        dto.setCreatedAt(project.getCreatedAt());
         return dto;
     }
 }

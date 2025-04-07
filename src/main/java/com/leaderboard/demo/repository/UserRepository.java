@@ -26,8 +26,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
 
     Optional<User> findByEmailAndIsDeletedFalse(String Email);
+    List<User> findByRoleNameAndScoreGreaterThanOrderByScoreDesc(String roleName, int score);
 
-    List<User> findTop10ByRoleNameOrderByScoreDesc(String role);
 
     boolean existsByEmailAndIsDeletedFalse(String email);
 

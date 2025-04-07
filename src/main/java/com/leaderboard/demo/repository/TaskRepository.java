@@ -1,5 +1,6 @@
 package com.leaderboard.demo.repository;
 
+import com.leaderboard.demo.entity.Project;
 import com.leaderboard.demo.entity.Task;
 import com.leaderboard.demo.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -36,6 +37,9 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
     @Query("SELECT t FROM Task t WHERE t.assignedBy.id = :mentorId AND t.isDeleted = false")
     List<Task> findByAssignedByIdAndIsDeletedFalse(@Param("mentorId") UUID mentorId);
 
+    int countByAssignedToIn(List<UUID> projectIds);
 
+    int countByAssignedToInAndIsDeletedFalse(List<Project> projects);
 
+    int countByAssignedToAndIsDeletedFalse(Project project);
 }

@@ -3,6 +3,7 @@ package com.leaderboard.demo.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -13,6 +14,15 @@ public class ProjectResponseDto {
     private Integer score;
     private String mentorName;
     private String collegeName;
+    private LocalDateTime createdAt;
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 
     public UUID getId() {
         return id;

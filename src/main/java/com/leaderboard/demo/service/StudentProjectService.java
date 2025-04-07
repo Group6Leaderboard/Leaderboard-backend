@@ -174,7 +174,8 @@ public class StudentProjectService {
                             project.getDescription(),
                             project.getScore(),
                             project.getMentor().getId(),
-                            project.getCollege().getId()
+                            project.getCollege().getId(),
+                            project.getCreatedAt()
                     );
                 })
                 .collect(Collectors.toList());

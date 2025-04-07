@@ -22,5 +22,5 @@ public interface CollegeRepository extends JpaRepository<College, UUID> {
 
     Optional<College> findByEmailAndIsDeletedFalse(String email);
 
-    List<College> findTop10ByOrderByScoreDesc();
+    List<College> findByScoreGreaterThanOrderByScoreDesc(int score);
 }
