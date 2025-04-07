@@ -15,6 +15,24 @@ public class LeaderboardDto {
     private String college;
     private int numProjects;
     private int score;
+    private byte[] image;
+    private int numTasks;
+
+    public byte[] getImage() {
+        return image;
+    }
+
+    public void setImage(byte[] image) {
+        this.image = image;
+    }
+
+    public int getNumTasks() {
+        return numTasks;
+    }
+
+    public void setNumTasks(int numTasks) {
+        this.numTasks = numTasks;
+    }
 
     public int getRank() {
         return rank;
