@@ -36,7 +36,6 @@ public class UserController {
     private CollegeRepository collegeRepository;
 
 
-
     @GetMapping
     @PreAuthorize(
             "hasRole('ADMIN') or " +
@@ -47,8 +46,7 @@ public class UserController {
     public ResponseEntity<ApiResponse<Object>> getUsers(
             @RequestParam(value = "role", required = false) String roleName,
             @RequestParam(value = "email", required = false) String email,
-            @RequestParam(value = "id", required = false) UUID id)
-    {
+            @RequestParam(value = "id", required = false) UUID id) {
 
         if (id != null) {
             ApiResponse<UserResponseDto> response = userService.getUserById(id);
@@ -66,15 +64,28 @@ public class UserController {
             ApiResponse<UserResponseDto> response = userService.getUsersByEmail(email);
             return ResponseEntity.status(response.getStatus())
                     .body(new ApiResponse<>(response.getStatus(), response.getMessage(), response.getResponse()));
-        }
-        else {
+        } else {
             ApiResponse<BaseResponse> response = userService.getUser();
             return ResponseEntity.status(response.getStatus())
                     .body(new ApiResponse<>(response.getStatus(), response.getMessage(), response.getResponse()));
 
-    }
+        }
 
     }
+
+    @GetMapping("/{id}")
+    @Transactional
+    public ResponseEntity<ApiResponse<UserResponseDto>> getUsers(
+            @PathVariable UUID id) {
+
+            ApiResponse<UserResponseDto> response = userService.getUserById(id);
+            return ResponseEntity.status(response.getStatus())
+                    .body(new ApiResponse<>(response.getStatus(), response.getMessage(), response.getResponse()));
+
+
+
+    }
+
 
 
     @PutMapping
