@@ -12,8 +12,8 @@ public class ProjectResponseDto {
     private String name;
     private String description;
     private Integer score;
-    private String mentorName;
-    private String collegeName;
+    private UUID mentorId;
+    private UUID collegeId;
     private LocalDateTime createdAt;
 
     public LocalDateTime getCreatedAt() {
@@ -56,19 +56,19 @@ public class ProjectResponseDto {
         this.score = score;
     }
 
-    public String getMentorName() {
-        return mentorName;
+    public UUID getMentorId() {
+        return mentorId;
     }
 
-    public void setMentorName(String mentorName) {
-        this.mentorName = mentorName;
+    public void setMentorId(UUID mentorId) {
+        this.mentorId = mentorId;
     }
 
-    public String getCollegeName() {
-        return collegeName;
+    public UUID getCollegeId() {
+        return collegeId;
     }
 
-    public void setCollegeName(String collegeName) {
-        this.collegeName = collegeName;
+    public void setCollegeId(UUID collegeId) {
+        this.collegeId = collegeId;
     }
 }

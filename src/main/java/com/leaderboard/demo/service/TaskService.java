@@ -44,6 +44,15 @@ public class TaskService {
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
+    @Transactional
+    public List<TaskDTO> getTasksAssignedToProjects(List<UUID> projectIds) {
+        List<Project> projects = projectRepository.findAllById(projectIds);
+        List<Task> tasks = taskRepository.findByAssignedToInAndIsDeletedFalse(projects);
+
+        return tasks.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
 
 
     @Transactional
@@ -251,6 +260,7 @@ public class TaskService {
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
+
 
 
 
