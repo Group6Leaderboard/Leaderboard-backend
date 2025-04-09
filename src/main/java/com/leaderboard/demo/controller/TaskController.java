@@ -4,7 +4,10 @@ import com.leaderboard.demo.dto.ApiResponse;
 import com.leaderboard.demo.dto.TaskDTO;
 import com.leaderboard.demo.dto.TaskPostDTO;
 import com.leaderboard.demo.dto.TaskPutDTO;
+import com.leaderboard.demo.entity.Project;
 import com.leaderboard.demo.entity.User;
+import com.leaderboard.demo.exception.ResourceNotFoundException;
+import com.leaderboard.demo.repository.StudentProjectRepository;
 import com.leaderboard.demo.repository.UserRepository;
 import com.leaderboard.demo.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,13 +16,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/tasks")
@@ -28,6 +35,9 @@ public class TaskController {
     private TaskService taskService;
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private StudentProjectRepository studentProjectRepository;
 
     @PostMapping
     @PreAuthorize("hasRole('MENTOR')")
@@ -88,14 +98,35 @@ public class TaskController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('MENTOR')")
+    @PreAuthorize("hasRole('MENTOR') or hasRole('STUDENT')")
+    @Transactional
     public ResponseEntity<ApiResponse<List<TaskDTO>>> getAllTasks() {
         String loggedInUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        System.out.println(loggedInUserEmail);
+        System.out.println("Logged in user: " + loggedInUserEmail);
 
-        List<TaskDTO> tasks = taskService.getTasksAssignedBy(loggedInUserEmail);
+        User user = userRepository.findByEmailAndIsDeletedFalse(loggedInUserEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        List<TaskDTO> tasks;
+
+        if (user.getRole().getName().equals("MENTOR")) {
+            tasks = taskService.getTasksAssignedBy(loggedInUserEmail);
+        } else if (user.getRole().getName().equals("STUDENT")) {
+            List<Project> studentProjects = studentProjectRepository.findProjectsByStudentId(user.getId());
+            List<UUID> projectIds = studentProjects.stream()
+                    .map(Project::getId)
+                    .collect(Collectors.toList());
+
+            tasks = taskService.getTasksAssignedToProjects(projectIds);
+        } else {
+            tasks = Collections.emptyList();
+        }
+
         return ApiResponse.success(tasks, "Tasks retrieved successfully");
     }
+
+
+
 
 
     @GetMapping("/project/{projectId}")
@@ -108,11 +139,11 @@ public class TaskController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deletTask(@PathVariable UUID id){
- try{
-     taskService.deleteTask(id);
-     return ApiResponse.noContent("Task deleted Succesfully");
- }catch (RuntimeException e){
-     return ApiResponse.badRequest(e.getMessage());
- }
-    }
+     try{
+         taskService.deleteTask(id);
+         return ApiResponse.noContent("Task deleted Succesfully");
+     }catch (RuntimeException e){
+         return ApiResponse.badRequest(e.getMessage());
+     }
+        }
 }

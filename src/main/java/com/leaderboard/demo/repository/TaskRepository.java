@@ -42,4 +42,7 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
     int countByAssignedToInAndIsDeletedFalse(List<Project> projects);
 
     int countByAssignedToAndIsDeletedFalse(Project project);
+
+    List<Task> findByAssignedToInAndIsDeletedFalse(List<Project> assignedToProjects);
+
 }
