@@ -289,5 +289,23 @@ public class TaskService {
         return dto;
     }
 
+    @Transactional
+    public int markOverdueTasks() {
+        List<Task> allTasks = taskRepository.findAll();
+        int count = 0;
+
+        for (Task task : allTasks) {
+            if (task.getDueDate() != null &&
+                    task.getDueDate().isBefore(LocalDateTime.now()) && (
+                    "Not Submitted".equalsIgnoreCase(task.getStatus()))) {
+
+                task.setStatus("Overdue");
+                count++;
+            }
+        }
+
+        taskRepository.saveAll(allTasks);
+        return count;
+    }
 
 }
