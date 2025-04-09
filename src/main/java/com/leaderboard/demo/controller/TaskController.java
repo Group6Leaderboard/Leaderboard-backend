@@ -86,7 +86,15 @@ public class TaskController {
                 }
 
     }
-
+    @PutMapping("/check-overdue")
+    public ResponseEntity<ApiResponse<String>> updateOverdueTasks() {
+        try {
+            int updatedCount = taskService.markOverdueTasks();
+            return ApiResponse.success("Updated " , "Tasks updated successfully");
+        } catch (Exception e) {
+            return ApiResponse.internalServerError("Error while updating overdue tasks");
+        }
+    }
     @GetMapping("/{id}")
 
     public ResponseEntity<ApiResponse<TaskDTO>> getTaskById(@PathVariable UUID id) {
