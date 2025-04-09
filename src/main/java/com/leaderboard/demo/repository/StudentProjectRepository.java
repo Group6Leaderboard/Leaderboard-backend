@@ -33,4 +33,10 @@ public interface StudentProjectRepository extends JpaRepository<StudentProject, 
     @Query("SELECT COUNT(sp) FROM StudentProject sp WHERE sp.student.id = :studentId AND sp.isDeleted = false")
     int countByStudentId(@Param("studentId") UUID studentId);
 
+    @Query("SELECT sp.project.id FROM StudentProject sp WHERE sp.student.id = :studentId")
+    List<UUID> findProjectIdsByStudentId(@Param("studentId") UUID studentId);
+
+    @Query("SELECT sp.project FROM StudentProject sp WHERE sp.student.id = :studentId")
+    List<Project> findProjectsByStudentId(@Param("studentId") UUID studentId);
+
 }

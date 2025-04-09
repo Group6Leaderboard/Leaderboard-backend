@@ -26,9 +26,14 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
     @Query("SELECT COALESCE(SUM(p.score), 0) FROM Project p WHERE p.college.id = :collegeId AND p.isDeleted = false")
     int sumScoresByCollegeId(@Param("collegeId") UUID collegeId);
 
-    List<Project> findTop10ByOrderByScoreDesc();
+    List<Project> findByScoreGreaterThanOrderByScoreDesc(int score);
+
 
     @Query("SELECT COUNT(p) FROM Project p WHERE p.college.id = :collegeId AND p.isDeleted = false")
     int countByCollegeId(@Param("collegeId") UUID collegeId);
+
+    @Query("SELECT p FROM Project p WHERE p.college.id = :collegeId")
+    List<Project> findByCollegeId(@Param("collegeId") UUID collegeId);
+
 
 }

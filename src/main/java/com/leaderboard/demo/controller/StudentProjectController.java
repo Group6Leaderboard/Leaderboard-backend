@@ -1,6 +1,7 @@
 package com.leaderboard.demo.controller;
 
 import com.leaderboard.demo.dto.ApiResponse;
+import com.leaderboard.demo.dto.ProjectDto;
 import com.leaderboard.demo.dto.Studentproject;
 import com.leaderboard.demo.dto.UserResponseDto;
 import com.leaderboard.demo.entity.StudentProject;
@@ -51,6 +52,20 @@ public class StudentProjectController {
         }
 
         return ResponseEntity.status(response.getStatus()).body(response);
+    }
+    @GetMapping("/projects")
+    public ResponseEntity<ApiResponse<List<ProjectDto>>> getProjectsForStudent(
+            @RequestParam UUID studentId) {
+
+        List<ProjectDto> projectDtos = studentProjectService.getProjectsForStudents(studentId);
+
+        ApiResponse<List<ProjectDto>> response = new ApiResponse<>(
+                HttpStatus.OK.value(),
+                "Projects fetched for student",
+                projectDtos
+        );
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/members")

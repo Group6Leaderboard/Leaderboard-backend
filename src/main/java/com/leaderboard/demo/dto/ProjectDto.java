@@ -3,6 +3,7 @@ package com.leaderboard.demo.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
@@ -14,6 +15,26 @@ public class ProjectDto {
     private Integer score;
     private UUID mentorId;
     private UUID collegeId;
+    private LocalDateTime createdAt;
+
+    public ProjectDto(UUID id, String name, String description, Integer score, UUID mentorId, UUID collegeId, LocalDateTime createdAt) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.score = score;
+        this.mentorId = mentorId;
+        this.collegeId = collegeId;
+        this.createdAt=createdAt;
+
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 
     public UUID getId() {
         return id;

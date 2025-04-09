@@ -44,37 +44,38 @@ public class UserService {
     }
 
 
-    @Transactional
-    public ApiResponse<UserResponseDto> updateUser(String loggedInUserEmail, UserDto userDto, MultipartFile image) {
-        User user = userRepository.findByEmailAndIsDeletedFalse(loggedInUserEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+//    @Transactional
+//    public ApiResponse<UserResponseDto> updateUser(String loggedInUserEmail, UserDto userDto, MultipartFile image) {
+//        User user = userRepository.findByEmailAndIsDeletedFalse(loggedInUserEmail)
+//                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+//
+//        if (userDto != null) {
+//            if (userDto.getEmail() != null) {
+//                throw new IllegalArgumentException("Email cannot be updated");
+//            }
+//            if (userDto.getPassword() != null) {
+//                user.setPassword(passwordEncoder.encode(userDto.getPassword()));
+//            }
+//            if (userDto.getPhone() != null) {
+//                user.setPhone(userDto.getPhone());
+//            }
+//        }
+//
+//        if (image != null && !image.isEmpty()) {
+//            try {
+//                user.setImage(image.getBytes());
+//            } catch (IOException e) {
+//                throw new RuntimeException("Failed to process image upload", e);
+//            }
+//        }
+//
+//        user.setUpdatedAt(LocalDateTime.now());
+//        User updatedUser = userRepository.save(user);
+//        UserResponseDto dto = mapToDto(updatedUser);
+//
+//        return new ApiResponse<>(200, "User updated successfully", dto);
+//    }
 
-        if (userDto != null) {
-            if (userDto.getEmail() != null) {
-                throw new IllegalArgumentException("Email cannot be updated");
-            }
-            if (userDto.getPassword() != null) {
-                user.setPassword(passwordEncoder.encode(userDto.getPassword()));
-            }
-            if (userDto.getPhone() != null) {
-                user.setPhone(userDto.getPhone());
-            }
-        }
-
-        if (image != null && !image.isEmpty()) {
-            try {
-                user.setImage(image.getBytes());
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to process image upload", e);
-            }
-        }
-
-        user.setUpdatedAt(LocalDateTime.now());
-        User updatedUser = userRepository.save(user);
-        UserResponseDto dto = mapToDto(updatedUser);
-
-        return new ApiResponse<>(200, "User updated successfully", dto);
-    }
 
     @Transactional
     public ApiResponse<UserResponseDto> getUserById(UUID userId) {

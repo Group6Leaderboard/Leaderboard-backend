@@ -20,6 +20,8 @@ public class UserDto {
     private UUID college_id;
     private UUID role_id;
     private byte[] image;
+    private String about;
+    private String location;
 
     public UUID getId() {
         return id;
@@ -83,6 +85,22 @@ public class UserDto {
 
     public void setRole_id(UUID role_id) {
         this.role_id = role_id;
+    }
+
+    public String getAbout() {
+        return about;
+    }
+
+    public void setAbout(String about) {
+        this.about = about;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
     }
 
     public byte[] getImage() {
