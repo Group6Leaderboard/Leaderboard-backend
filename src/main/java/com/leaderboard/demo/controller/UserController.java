@@ -1,5 +1,6 @@
 package com.leaderboard.demo.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.leaderboard.demo.dto.ApiResponse;
 import com.leaderboard.demo.dto.BaseResponse;
 import com.leaderboard.demo.dto.UserDto;
@@ -11,6 +12,7 @@ import com.leaderboard.demo.repository.UserRepository;
 import com.leaderboard.demo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -88,17 +90,30 @@ public class UserController {
 
 
 
-    @PutMapping
+    @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN') or hasRole('STUDENT') or hasRole('MENTOR')")
     public ResponseEntity<ApiResponse<UserResponseDto>> updateUser(
-            @RequestPart(value = "userDto", required = false) UserDto userDto,
+            @RequestPart(value = "userDto", required = false) String userDtoString,
             @RequestPart(value = "image", required = false) MultipartFile image) {
 
-        String loggedInUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        ApiResponse<UserResponseDto> response = userService.updateUser(loggedInUserEmail, userDto, image);
+        try {
+            // Convert JSON string to UserDto
+            ObjectMapper mapper = new ObjectMapper();
+            UserDto userDto = mapper.readValue(userDtoString, UserDto.class);
 
-        return ResponseEntity.status(response.getStatus()).body(response);
+            String loggedInUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+            ApiResponse<UserResponseDto> response = userService.updateUser(loggedInUserEmail, userDto, image);
+
+            return ResponseEntity.status(response.getStatus()).body(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            ApiResponse<UserResponseDto> errorResponse = new ApiResponse<>();
+            errorResponse.setStatus(500);
+            errorResponse.setMessage("Failed to update user: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
     }
+
 
 
 
