@@ -39,6 +39,7 @@ public class ProjectController {
         return ResponseEntity.ok(new ApiResponse<>(200, "Project fetched successfully", project));
     }
 
+
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ProjectResponseDto>> createProject(@RequestBody ProjectDto projectDto) {

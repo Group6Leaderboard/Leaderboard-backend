@@ -44,37 +44,121 @@ public class UserService {
     }
 
 
-    @Transactional
-    public ApiResponse<UserResponseDto> updateUser(String loggedInUserEmail, UserDto userDto, MultipartFile image) {
-        User user = userRepository.findByEmailAndIsDeletedFalse(loggedInUserEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+//    @Transactional
+//    public ApiResponse<UserResponseDto> updateUser(String loggedInUserEmail, UserDto userDto, MultipartFile image) {
+//        User user = userRepository.findByEmailAndIsDeletedFalse(loggedInUserEmail)
+//                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+//
+//        if (userDto != null) {
+//            if (userDto.getEmail() != null) {
+//                throw new IllegalArgumentException("Email cannot be updated");
+//            }
+//            if (userDto.getPassword() != null) {
+//                user.setPassword(passwordEncoder.encode(userDto.getPassword()));
+//            }
+//            if (userDto.getPhone() != null) {
+//                user.setPhone(userDto.getPhone());
+//            }
+//        }
+//
+//        if (image != null && !image.isEmpty()) {
+//            try {
+//                user.setImage(image.getBytes());
+//            } catch (IOException e) {
+//                throw new RuntimeException("Failed to process image upload", e);
+//            }
+//        }
+//
+//        user.setUpdatedAt(LocalDateTime.now());
+//        User updatedUser = userRepository.save(user);
+//        UserResponseDto dto = mapToDto(updatedUser);
+//
+//        return new ApiResponse<>(200, "User updated successfully", dto);
+//    }
+@Transactional
+public ApiResponse<UserResponseDto> updateUser(String loggedInUserEmail, UserDto userDto, MultipartFile image) {
+    User user = userRepository.findByEmailAndIsDeletedFalse(loggedInUserEmail)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        if (userDto != null) {
-            if (userDto.getEmail() != null) {
-                throw new IllegalArgumentException("Email cannot be updated");
-            }
-            if (userDto.getPassword() != null) {
-                user.setPassword(passwordEncoder.encode(userDto.getPassword()));
-            }
-            if (userDto.getPhone() != null) {
-                user.setPhone(userDto.getPhone());
-            }
+    if (userDto != null) {
+        System.out.println(loggedInUserEmail);
+        // Verify email can't be updated
+        if (userDto.getEmail() != null && !userDto.getEmail().equals(user.getEmail())) {
+            throw new IllegalArgumentException("Email cannot be updated");
         }
 
-        if (image != null && !image.isEmpty()) {
-            try {
-                user.setImage(image.getBytes());
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to process image upload", e);
-            }
+        // Update name if provided
+        if (userDto.getName() != null && !userDto.getName().isEmpty()) {
+            System.out.println("Name updating");
+            user.setName(userDto.getName());
         }
 
-        user.setUpdatedAt(LocalDateTime.now());
-        User updatedUser = userRepository.save(user);
-        UserResponseDto dto = mapToDto(updatedUser);
+        // Handle password change if old and new passwords are provided
+        if (userDto.getOldPassword() != null && userDto.getNewPassword() != null) {
+            // Verify old password
+            if (!passwordEncoder.matches(userDto.getOldPassword(), user.getPassword())) {
+                throw new IllegalArgumentException("Current password is incorrect");
+            }
 
-        return new ApiResponse<>(200, "User updated successfully", dto);
+            // Validate new password
+            if (userDto.getNewPassword().length() < 8) {
+                throw new IllegalArgumentException("Password must be at least 8 characters long");
+            }
+
+            // Confirm passwords match
+            if (!userDto.getNewPassword().equals(userDto.getConfirmPassword())) {
+                throw new IllegalArgumentException("New password and confirm password do not match");
+            }
+
+            // Update password
+            user.setPassword(passwordEncoder.encode(userDto.getNewPassword()));
+        } else if (userDto.getPassword() != null) {
+            // Handle direct password update (for backward compatibility or admin use)
+            user.setPassword(passwordEncoder.encode(userDto.getPassword()));
+        }
+
+        // Update phone if provided (for student/mentor)
+        if (userDto.getPhone() != null) {
+            user.setPhone(userDto.getPhone());
+        }
+
+        // Update college-specific fields
+        if ("COLLEGE".equals(user.getRole().getName())) {
+            College college = collegeRepository.findByEmailAndIsDeletedFalse(loggedInUserEmail)
+                    .orElseThrow(() -> new ResourceNotFoundException("College not found"));
+
+            // Update location if provided
+            if (userDto.getLocation() != null) {
+                college.setLocation(userDto.getLocation());
+            }
+
+            // Update about if provided
+            if (userDto.getAbout() != null) {
+                college.setAbout(userDto.getAbout());
+            }
+
+            collegeRepository.save(college);
+        }
     }
+
+    // Process image upload
+    if (image != null && !image.isEmpty()) {
+        System.out.println("Here image");
+        try {
+            user.setImage(image.getBytes());
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to process image upload", e);
+        }
+    }
+
+    user.setUpdatedAt(LocalDateTime.now());
+    System.out.println("saving");
+    User updatedUser = userRepository.save(user);
+    System.out.println("saved");
+    UserResponseDto dto = mapToDto(updatedUser);
+
+    return new ApiResponse<>(200, "User updated successfully", dto);
+}
 
     @Transactional
     public ApiResponse<UserResponseDto> getUserById(UUID userId) {

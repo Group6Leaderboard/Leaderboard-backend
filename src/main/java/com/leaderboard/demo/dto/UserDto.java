@@ -15,11 +15,16 @@ public class UserDto {
     private String email;
     private String name;
     private String password;
+    private String oldPassword;
+    private String newPassword;
+    private String confirmPassword;
     private String phone;
     private int score;
     private UUID college_id;
     private UUID role_id;
     private byte[] image;
+    private String about;
+    private String location;
 
     public UUID getId() {
         return id;
@@ -85,11 +90,51 @@ public class UserDto {
         this.role_id = role_id;
     }
 
+    public String getAbout() {
+        return about;
+    }
+
+    public void setAbout(String about) {
+        this.about = about;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
     public byte[] getImage() {
         return image;
     }
 
     public void setImage(byte[] image) {
         this.image = image;
+    }
+
+    public String getOldPassword() {
+        return oldPassword;
+    }
+
+    public void setOldPassword(String oldPassword) {
+        this.oldPassword = oldPassword;
+    }
+
+    public String getNewPassword() {
+        return newPassword;
+    }
+
+    public void setNewPassword(String newPassword) {
+        this.newPassword = newPassword;
+    }
+
+    public String getConfirmPassword() {
+        return confirmPassword;
+    }
+
+    public void setConfirmPassword(String confirmPassword) {
+        this.confirmPassword = confirmPassword;
     }
 }
